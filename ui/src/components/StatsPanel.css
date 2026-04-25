@@ -1,0 +1,134 @@
+.stats-panel {
+  padding: 8px;
+}
+
+.stats-panel .ant-card {
+  border-radius: var(--apple-radius-lg) !important;
+  background: var(--apple-bg-primary);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.stats-panel .ant-card:hover {
+  box-shadow: var(--apple-shadow-md) !important;
+  transform: translateY(-1px);
+}
+
+.stat-card {
+  text-align: center;
+  padding: 12px 0;
+}
+
+.stat-card .ant-statistic-title {
+  font-size: 13px;
+  color: var(--apple-text-secondary);
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.stat-card .ant-statistic-content {
+  font-size: 36px;
+  font-weight: 700;
+  letter-spacing: -1.5px;
+  color: var(--apple-text-primary);
+}
+
+.stat-card .ant-statistic-content-prefix {
+  margin-right: 8px;
+  font-size: 28px;
+}
+
+.memory-distribution .memory-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 8px 0;
+}
+
+.memory-bar-item {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.memory-bar-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+}
+
+.memory-bar-label .ant-tag {
+  font-size: 12px;
+  padding: 3px 10px;
+  font-weight: 500;
+}
+
+.memory-bar-label span:last-child {
+  color: var(--apple-text-secondary);
+  font-weight: 500;
+}
+
+.memory-bar-item .ant-progress {
+  margin: 0;
+}
+
+.memory-bar-item .ant-progress-inner {
+  background: var(--apple-gray-5) !important;
+  border-radius: 4px;
+}
+
+.memory-bar-item .ant-progress-bg {
+  border-radius: 4px;
+}
+
+.system-status {
+  padding: 8px 0;
+}
+
+.system-status .ant-card-head {
+  border-bottom: none;
+  min-height: 44px;
+  padding: 0 0 8px 0;
+}
+
+.system-status .ant-card-head-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--apple-text-primary);
+}
+
+.system-status .ant-card-body {
+  padding: 0;
+}
+
+.system-status .status-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--apple-gray-5);
+  font-size: 15px;
+  color: var(--apple-text-primary);
+}
+
+.system-status .status-item:last-child {
+  border-bottom: none;
+}
+
+.system-status .status-item .ant-tag {
+  font-size: 12px;
+  padding: 3px 10px;
+  font-weight: 500;
+}
+
+.stats-panel .ant-row {
+  margin-bottom: 0;
+}
+
+.stats-panel .ant-col {
+  margin-bottom: 16px;
+}
+
+.stats-panel .ant-col:last-child {
+  margin-bottom: 0;
+}

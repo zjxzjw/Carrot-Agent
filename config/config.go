@@ -1,17 +1,18 @@
 package config
 
 import (
+	"fmt"
 	"os"
 
 	"gopkg.in/yaml.v3"
 )
 
 type Config struct {
-	Agent     AgentConfig     `yaml:"agent"`
-	Model     ModelConfig     `yaml:"model"`
-	Storage   StorageConfig   `yaml:"storage"`
-	Server    ServerConfig    `yaml:"server"`
-	Security  SecurityConfig  `yaml:"security"`
+	Agent    AgentConfig    `yaml:"agent"`
+	Model    ModelConfig    `yaml:"model"`
+	Storage  StorageConfig  `yaml:"storage"`
+	Server   ServerConfig   `yaml:"server"`
+	Security SecurityConfig `yaml:"security"`
 }
 
 type AgentConfig struct {
@@ -32,10 +33,10 @@ type ModelConfig struct {
 }
 
 type StorageConfig struct {
-	DBPath      string `yaml:"db_path"`
-	SkillDir    string `yaml:"skill_dir"`
-	MemoryDir   string `yaml:"memory_dir"`
-	SessionDir  string `yaml:"session_dir"`
+	DBPath     string `yaml:"db_path"`
+	SkillDir   string `yaml:"skill_dir"`
+	MemoryDir  string `yaml:"memory_dir"`
+	SessionDir string `yaml:"session_dir"`
 }
 
 type ServerConfig struct {
@@ -49,6 +50,36 @@ type SecurityConfig struct {
 	BlockedCmds  []string `yaml:"blocked_cmds"`
 }
 
+func (c *Config) Validate() []error {
+	var errors []error
+
+	if c.Model.APIKey == "" {
+		errors = append(errors, fmt.Errorf("model API key is required"))
+	}
+
+	if c.Model.ModelName == "" {
+		errors = append(errors, fmt.Errorf("model name is required"))
+	}
+
+	if c.Model.Temperature < 0 || c.Model.Temperature > 2 {
+		errors = append(errors, fmt.Errorf("temperature must be between 0 and 2, got %f", c.Model.Temperature))
+	}
+
+	if c.Model.MaxTokens <= 0 || c.Model.MaxTokens > 128000 {
+		errors = append(errors, fmt.Errorf("max_tokens must be between 1 and 128000, got %d", c.Model.MaxTokens))
+	}
+
+	if c.Server.Port <= 0 || c.Server.Port > 65535 {
+		errors = append(errors, fmt.Errorf("server port must be between 1 and 65535, got %d", c.Server.Port))
+	}
+
+	if c.Agent.SkillNudgeInt < 0 {
+		errors = append(errors, fmt.Errorf("skill_nudge_interval cannot be negative, got %d", c.Agent.SkillNudgeInt))
+	}
+
+	return errors
+}
+
 func Load(path string) (*Config, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -58,6 +89,10 @@ func Load(path string) (*Config, error) {
 	var cfg Config
 	if err := yaml.Unmarshal(data, &cfg); err != nil {
 		return nil, err
+	}
+
+	if errs := cfg.Validate(); len(errs) > 0 {
+		return nil, fmt.Errorf("configuration validation failed: %v", errs)
 	}
 
 	return &cfg, nil

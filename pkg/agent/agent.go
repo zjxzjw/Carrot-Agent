@@ -4,6 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"net"
+	"net/http"
+	"os"
+	"path/filepath"
+	"regexp"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -12,15 +19,80 @@ import (
 	"carrotagent/carrot-agent/pkg/agent/model"
 	"carrotagent/carrot-agent/pkg/agent/skill"
 	"carrotagent/carrot-agent/pkg/agent/tool"
+	"carrotagent/carrot-agent/pkg/logger"
 	"carrotagent/carrot-agent/pkg/storage"
 )
+
+var (
+	allowedPaths   = []string{"~/.carrot", "/tmp"}
+	blockListRegex = regexp.MustCompile(`(?i)(proc|sys|etc/passwd|etc/shadow|\.ssh|\.aws|\.git/config)`)
+	privateIPRanges = []*net.IPNet{
+		parseCIDR("10.0.0.0/8"),
+		parseCIDR("172.16.0.0/12"),
+		parseCIDR("192.168.0.0/16"),
+		parseCIDR("127.0.0.0/8"),
+		parseCIDR("169.254.0.0/16"),
+	}
+)
+
+func parseCIDR(cidr string) *net.IPNet {
+	_, ipNet, _ := net.ParseCIDR(cidr)
+	return ipNet
+}
+
+func isPathAllowed(path string) bool {
+	absPath, err := filepath.Abs(os.ExpandEnv(path))
+	if err != nil {
+		return false
+	}
+
+	if blockListRegex.MatchString(absPath) {
+		return false
+	}
+
+	for _, allowed := range allowedPaths {
+		allowedAbs, _ := filepath.Abs(os.ExpandEnv(allowed))
+		if strings.HasPrefix(absPath, allowedAbs) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func isURLAllowed(rawURL string) bool {
+	if blockListRegex.MatchString(rawURL) {
+		return false
+	}
+
+	urlLower := strings.ToLower(rawURL)
+	if strings.HasPrefix(urlLower, "http://") || strings.HasPrefix(urlLower, "https://") {
+		return true
+	}
+
+	host, _, err := net.SplitHostPort(rawURL)
+	if err != nil {
+		host = rawURL
+	}
+
+	ip := net.ParseIP(host)
+	if ip != nil {
+		for _, privateRange := range privateIPRanges {
+			if privateRange.Contains(ip) {
+				return false
+			}
+		}
+	}
+
+	return true
+}
 
 type AIAgent struct {
 	name          string
 	version       string
 	store         *storage.Store
-	memory        *memory.MemoryManager
-	skillManager  *skill.SkillManager
+	Memory        *memory.MemoryManager
+	SkillManager  *skill.SkillManager
 	modelProvider model.Provider
 	toolRegistry  *tool.ToolRegistry
 	config        *AgentConfig
@@ -53,13 +125,13 @@ func WithModelProvider(provider model.Provider) AgentOption {
 
 func WithSkillManager(skillMgr *skill.SkillManager) AgentOption {
 	return func(a *AIAgent) {
-		a.skillManager = skillMgr
+		a.SkillManager = skillMgr
 	}
 }
 
 func WithMemoryManager(memMgr *memory.MemoryManager) AgentOption {
 	return func(a *AIAgent) {
-		a.memory = memMgr
+		a.Memory = memMgr
 	}
 }
 
@@ -74,6 +146,8 @@ func NewAIAgent(cfg *AgentConfig, store *storage.Store, opts ...AgentOption) *AI
 		name:          "carrot-agent",
 		version:       "0.1.0",
 		store:         store,
+		Memory:        memory.NewMemoryManager(store),
+		SkillManager:  skill.NewSkillManager(store),
 		toolRegistry:  tool.NewToolRegistry(),
 		conversation:  make([]model.Message, 0),
 		skillNudgeInt: 10,
@@ -93,11 +167,11 @@ func NewAIAgent(cfg *AgentConfig, store *storage.Store, opts ...AgentOption) *AI
 }
 
 func (a *AIAgent) Initialize(ctx context.Context) error {
-	if err := a.memory.Load(ctx); err != nil {
+	if err := a.Memory.Load(ctx); err != nil {
 		return fmt.Errorf("failed to load memory: %w", err)
 	}
 
-	if err := a.skillManager.Load(ctx); err != nil {
+	if err := a.SkillManager.Load(ctx); err != nil {
 		return fmt.Errorf("failed to load skills: %w", err)
 	}
 
@@ -114,7 +188,7 @@ func (a *AIAgent) registerDefaultTools() {
 		},
 		func(ctx context.Context, args map[string]interface{}) (interface{}, error) {
 			id, _ := args["memory_id"].(string)
-			mem, err := a.memory.Get(id)
+			mem, err := a.Memory.Get(id)
 			if err != nil {
 				return nil, err
 			}
@@ -139,7 +213,7 @@ func (a *AIAgent) registerDefaultTools() {
 				metadata = "{}"
 			}
 
-			if err := a.memory.Add(ctx, memType, content, metadata); err != nil {
+			if err := a.Memory.Add(ctx, memType, content, metadata); err != nil {
 				return nil, err
 			}
 			return "Memory saved successfully", nil
@@ -157,7 +231,7 @@ func (a *AIAgent) registerDefaultTools() {
 			description, _ := args["description"].(string)
 			content, _ := args["content"].(string)
 
-			if err := a.skillManager.Create(ctx, name, description, content); err != nil {
+			if err := a.SkillManager.Create(ctx, name, description, content); err != nil {
 				return nil, err
 			}
 			return fmt.Sprintf("Skill '%s' created successfully", name), nil
@@ -173,7 +247,7 @@ func (a *AIAgent) registerDefaultTools() {
 			skillID, _ := args["skill_id"].(string)
 			content, _ := args["content"].(string)
 
-			if err := a.skillManager.Update(ctx, skillID, content); err != nil {
+			if err := a.SkillManager.Update(ctx, skillID, content); err != nil {
 				return nil, err
 			}
 			return "Skill updated successfully", nil
@@ -183,7 +257,7 @@ func (a *AIAgent) registerDefaultTools() {
 		"List all available skills",
 		map[string]interface{}{},
 		func(ctx context.Context, args map[string]interface{}) (interface{}, error) {
-			skills := a.skillManager.List(100)
+			skills := a.SkillManager.List(100)
 			if len(skills) == 0 {
 				return "No skills available.", nil
 			}
@@ -203,7 +277,7 @@ func (a *AIAgent) registerDefaultTools() {
 		},
 		func(ctx context.Context, args map[string]interface{}) (interface{}, error) {
 			keyword, _ := args["keyword"].(string)
-			skills, err := a.skillManager.Search(keyword, 50)
+			skills, err := a.SkillManager.Search(keyword, 50)
 			if err != nil {
 				return nil, err
 			}
@@ -218,6 +292,93 @@ func (a *AIAgent) registerDefaultTools() {
 				lines = append(lines, fmt.Sprintf("- **%s**: %s", s.Name, s.Description))
 			}
 			return strings.Join(lines, "\n"), nil
+		})
+
+	a.toolRegistry.Register("system_info",
+		"Get system information",
+		map[string]interface{}{},
+		func(ctx context.Context, args map[string]interface{}) (interface{}, error) {
+			info := map[string]interface{}{
+				"os":         runtime.GOOS,
+				"arch":       runtime.GOARCH,
+				"go_version": runtime.Version(),
+				"agent_version": a.version,
+				"time":       time.Now().Format(time.RFC3339),
+			}
+			return info, nil
+		})
+
+	a.toolRegistry.Register("file_read",
+		"Read file content",
+		map[string]interface{}{
+			"file_path": map[string]interface{}{"type": "string", "description": "File path to read", "required": true},
+		},
+		func(ctx context.Context, args map[string]interface{}) (interface{}, error) {
+			filePath, _ := args["file_path"].(string)
+			if !isPathAllowed(filePath) {
+				return nil, fmt.Errorf("access denied: path %q is not allowed", filePath)
+			}
+			content, err := os.ReadFile(filePath)
+			if err != nil {
+				return nil, fmt.Errorf("failed to read file: %w", err)
+			}
+			return string(content), nil
+		})
+
+	a.toolRegistry.Register("file_write",
+		"Write content to file",
+		map[string]interface{}{
+			"file_path": map[string]interface{}{"type": "string", "description": "File path to write", "required": true},
+			"content":   map[string]interface{}{"type": "string", "description": "Content to write", "required": true},
+		},
+		func(ctx context.Context, args map[string]interface{}) (interface{}, error) {
+			filePath, _ := args["file_path"].(string)
+			if !isPathAllowed(filePath) {
+				return nil, fmt.Errorf("access denied: path %q is not allowed", filePath)
+			}
+			content, _ := args["content"].(string)
+			if err := os.WriteFile(filePath, []byte(content), 0644); err != nil {
+				return nil, fmt.Errorf("failed to write file: %w", err)
+			}
+			return "File written successfully", nil
+		})
+
+	a.toolRegistry.Register("http_get",
+		"Send HTTP GET request",
+		map[string]interface{}{
+			"url": map[string]interface{}{"type": "string", "description": "URL to request", "required": true},
+		},
+		func(ctx context.Context, args map[string]interface{}) (interface{}, error) {
+			url, _ := args["url"].(string)
+			if !isURLAllowed(url) {
+				return nil, fmt.Errorf("access denied: URL %q is not allowed", url)
+			}
+			resp, err := http.Get(url)
+			if err != nil {
+				return nil, fmt.Errorf("failed to send request: %w", err)
+			}
+			defer resp.Body.Close()
+
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, fmt.Errorf("failed to read response: %w", err)
+			}
+
+			return map[string]interface{}{
+				"status": resp.Status,
+				"status_code": resp.StatusCode,
+				"content": string(body),
+			}, nil
+		})
+
+	a.toolRegistry.Register("get_time",
+		"Get current time",
+		map[string]interface{}{},
+		func(ctx context.Context, args map[string]interface{}) (interface{}, error) {
+			return map[string]interface{}{
+				"current_time": time.Now().Format(time.RFC3339),
+				"unix_time":    time.Now().Unix(),
+			}, nil
 		})
 }
 
@@ -276,7 +437,7 @@ func (a *AIAgent) buildSystemPrompt() string {
 	prompt.WriteString(fmt.Sprintf("You are %s, version %s.\n\n", a.name, a.version))
 
 	if a.config.EnableMemory {
-		snapshot := a.memory.GetSnapshotContent()
+		snapshot := a.Memory.GetSnapshotContent()
 		if snapshot != "" {
 			prompt.WriteString("## Memory\n")
 			prompt.WriteString(snapshot)
@@ -285,7 +446,7 @@ func (a *AIAgent) buildSystemPrompt() string {
 	}
 
 	if a.config.EnableSkills {
-		skillsIndex := a.skillManager.GetSkillsIndex()
+		skillsIndex := a.SkillManager.GetSkillsIndex()
 		if skillsIndex != "" {
 			prompt.WriteString(skillsIndex)
 			prompt.WriteString("\n")
@@ -346,7 +507,7 @@ func (a *AIAgent) ProcessToolCalls(ctx context.Context, toolCalls []map[string]i
 
 func (a *AIAgent) triggerSkillNudge(ctx context.Context) {
 	go func() {
-		_, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 
 		lastMessages := a.conversation
@@ -354,7 +515,37 @@ func (a *AIAgent) triggerSkillNudge(ctx context.Context) {
 			return
 		}
 
-		fmt.Println("[Background] Checking if recent work should be saved as a skill...")
+		logger.Info("Checking if recent work should be saved as a skill...")
+
+		var recentContent strings.Builder
+		recentContent.WriteString("# Recent Work\n\n")
+
+		start := len(lastMessages) - 10
+		if start < 0 {
+			start = 0
+		}
+
+		for i := start; i < len(lastMessages); i++ {
+			msg := lastMessages[i]
+			recentContent.WriteString(fmt.Sprintf("## %s\n", msg.Role))
+			recentContent.WriteString(msg.Content)
+			recentContent.WriteString("\n\n")
+		}
+
+		skillName := fmt.Sprintf("workflow_%d", time.Now().Unix())
+		skillDescription := "Automatically generated skill from recent workflow"
+
+		skillContent := skill.GenerateSkillFile(
+			skillName,
+			skillDescription,
+			recentContent.String(),
+		)
+
+		if err := a.SkillManager.Create(ctx, skillName, skillDescription, skillContent); err != nil {
+			logger.Error("Failed to create skill: %v", err)
+		} else {
+			logger.Info("Skill '%s' created successfully", skillName)
+		}
 	}()
 }
 
@@ -381,14 +572,19 @@ func (a *AIAgent) SaveConversation(sessionID string) error {
 func (a *AIAgent) LoadConversation(sessionID string) error {
 	session, err := a.store.GetSession(sessionID)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get session: %w", err)
 	}
 	if session == nil {
+		a.conversation = make([]model.Message, 0)
 		return nil
 	}
 
-	a.conversation = make([]model.Message, 0)
+	var messages []model.Message
+	if err := json.Unmarshal([]byte(session.Messages), &messages); err != nil {
+		return fmt.Errorf("failed to unmarshal session messages: %w", err)
+	}
 
+	a.conversation = messages
 	return nil
 }
 
@@ -401,8 +597,8 @@ func (a *AIAgent) ResetConversation() {
 func (a *AIAgent) GetStats() map[string]interface{} {
 	return map[string]interface{}{
 		"tool_call_count":   a.toolCallCount,
-		"skill_count":      a.skillManager.GetSkillCount(),
-		"memory_stats":     a.memory.GetMemoryStats(),
+		"skill_count":      a.SkillManager.GetSkillCount(),
+		"memory_stats":     a.Memory.GetMemoryStats(),
 		"conversation_len": len(a.conversation),
 	}
 }

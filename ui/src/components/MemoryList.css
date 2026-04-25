@@ -1,0 +1,56 @@
+.memory-list-container {
+  height: 100%;
+}
+
+.memory-item {
+  padding: 16px 0;
+  transition: background-color 0.2s ease;
+  border-radius: var(--apple-radius-md);
+  margin: 0 -20px;
+  padding-left: 20px;
+  padding-right: 20px;
+}
+
+.memory-item:hover {
+  background-color: var(--apple-gray-6);
+}
+
+.memory-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.memory-title .ant-typography {
+  font-size: 13px;
+  color: var(--apple-text-tertiary);
+}
+
+.memory-content {
+  margin-bottom: 0 !important;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--apple-text-primary);
+}
+
+.memory-list-container .ant-tag {
+  font-size: 12px;
+  padding: 2px 10px;
+}
+
+.memory-list-container .ant-list-pagination {
+  margin-top: 16px;
+  text-align: center;
+}
+
+.memory-list-container .ant-empty {
+  padding: 40px 0;
+}
+
+.memory-list-container .ant-empty-description {
+  color: var(--apple-text-tertiary);
+}
+
+.memory-list-container .ant-select {
+  min-width: 120px;
+}

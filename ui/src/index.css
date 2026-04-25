@@ -1,0 +1,187 @@
+:root {
+  --apple-blue: #007AFF;
+  --apple-blue-light: #0A84FF;
+  --apple-blue-dark: #0056CC;
+  --apple-gray-1: #8E8E93;
+  --apple-gray-2: #AEAEB2;
+  --apple-gray-3: #C7C7CC;
+  --apple-gray-4: #D1D1D6;
+  --apple-gray-5: #E5E5EA;
+  --apple-gray-6: #F2F2F7;
+  --apple-bg-primary: #FFFFFF;
+  --apple-bg-secondary: #F5F5F7;
+  --apple-bg-tertiary: #FFFFFF;
+  --apple-text-primary: #1D1D1F;
+  --apple-text-secondary: #86868B;
+  --apple-text-tertiary: #AEAEB2;
+  --apple-green: #34C759;
+  --apple-orange: #FF9500;
+  --apple-red: #FF3B30;
+  --apple-purple: #AF52DE;
+  --apple-yellow: #FFCC00;
+  --apple-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --apple-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.04), 0 2px 4px rgba(0, 0, 0, 0.06);
+  --apple-shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.04), 0 4px 6px rgba(0, 0, 0, 0.05);
+  --apple-shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.05), 0 10px 10px rgba(0, 0, 0, 0.04);
+  --apple-radius-sm: 6px;
+  --apple-radius-md: 10px;
+  --apple-radius-lg: 14px;
+  --apple-radius-xl: 20px;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color-scheme: light;
+  color: var(--apple-text-primary);
+  background-color: var(--apple-bg-secondary);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+#root {
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background: var(--apple-bg-secondary);
+}
+
+::selection {
+  background: var(--apple-blue);
+  color: white;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--apple-gray-3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--apple-gray-2);
+}
+
+a {
+  color: var(--apple-blue);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--apple-blue-light);
+}
+
+button {
+  font-family: inherit;
+}
+
+.ant-btn-primary {
+  background: var(--apple-blue) !important;
+  border-color: var(--apple-blue) !important;
+  border-radius: var(--apple-radius-sm) !important;
+  font-weight: 500;
+}
+
+.ant-btn-primary:hover {
+  background: var(--apple-blue-light) !important;
+  border-color: var(--apple-blue-light) !important;
+}
+
+.ant-btn {
+  border-radius: var(--apple-radius-sm) !important;
+  font-weight: 500;
+}
+
+.ant-input,
+.ant-input-textarea textarea {
+  border-radius: var(--apple-radius-sm) !important;
+  border-color: var(--apple-gray-4) !important;
+}
+
+.ant-input:focus,
+.ant-input-focused,
+.ant-input-textarea textarea:focus {
+  border-color: var(--apple-blue) !important;
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.15) !important;
+}
+
+.ant-card {
+  border-radius: var(--apple-radius-md) !important;
+  border: none !important;
+  box-shadow: var(--apple-shadow-sm) !important;
+}
+
+.ant-card:hover {
+  box-shadow: var(--apple-shadow-md) !important;
+}
+
+.ant-tabs-tab {
+  font-weight: 500;
+  color: var(--apple-text-secondary) !important;
+}
+
+.ant-tabs-tab-active .ant-tabs-tab-btn {
+  color: var(--apple-blue) !important;
+}
+
+.ant-tabs-ink-bar {
+  background: var(--apple-blue) !important;
+}
+
+.ant-modal-content {
+  border-radius: var(--apple-radius-lg) !important;
+  overflow: hidden;
+}
+
+.ant-modal-header {
+  border-radius: var(--apple-radius-lg) var(--apple-radius-lg) 0 0 !important;
+}
+
+.ant-modal-title {
+  font-weight: 600;
+}
+
+.ant-badge-status-success {
+  background-color: var(--apple-green);
+}
+
+.ant-tag {
+  border-radius: var(--apple-radius-sm) !important;
+  border: none;
+  font-weight: 500;
+}
+
+.ant-progress-inner {
+  background: var(--apple-gray-5) !important;
+}
+
+.ant-list-item {
+  border-bottom: none !important;
+}
+
+.ant-popover-inner {
+  border-radius: var(--apple-radius-md) !important;
+}
+
+.ant-tooltip-inner {
+  border-radius: var(--apple-radius-sm) !important;
+}

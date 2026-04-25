@@ -1,0 +1,79 @@
+.skill-list-container {
+  height: 100%;
+}
+
+.skill-item {
+  padding: 16px 0;
+  transition: background-color 0.2s ease;
+  border-radius: var(--apple-radius-md);
+  margin: 0 -20px;
+  padding-left: 20px;
+  padding-right: 20px;
+}
+
+.skill-item:hover {
+  background-color: var(--apple-gray-6);
+}
+
+.skill-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.skill-title .ant-typography {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--apple-text-primary);
+}
+
+.skill-description {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.skill-description .ant-typography {
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.skill-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.skill-date {
+  font-size: 12px;
+  color: var(--apple-text-tertiary);
+}
+
+.skill-platforms {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.platform-tag {
+  font-size: 12px;
+  padding: 2px 8px;
+  margin: 0;
+  background: var(--apple-gray-6);
+  color: var(--apple-text-secondary);
+  border-radius: var(--apple-radius-sm);
+}
+
+.skill-list-container .ant-list-pagination {
+  margin-top: 16px;
+  text-align: center;
+}
+
+.skill-list-container .ant-empty {
+  padding: 40px 0;
+}
+
+.skill-list-container .ant-empty-description {
+  color: var(--apple-text-tertiary);
+}

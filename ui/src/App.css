@@ -1,0 +1,329 @@
+* {
+  box-sizing: border-box;
+}
+
+#root {
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  background: var(--apple-bg-secondary);
+}
+
+.app-layout {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--apple-bg-secondary);
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  padding: 0 24px !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  height: 52px;
+  z-index: 10;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.header-left h3 {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--apple-text-primary);
+  letter-spacing: -0.41px;
+  margin: 0;
+}
+
+.header-left .ant-badge-status-text {
+  font-size: 13px;
+  color: var(--apple-text-secondary);
+}
+
+.app-body {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+.app-sider {
+  background: rgba(255, 255, 255, 0.68) !important;
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border-right: 1px solid rgba(0, 0, 0, 0.06);
+  overflow-y: auto;
+  min-width: 0;
+}
+
+.sider-search {
+  padding: 16px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.conversation-menu {
+  border-right: none !important;
+  background: transparent;
+  padding: 8px;
+}
+
+.conversation-menu .ant-menu-item {
+  margin: 2px 0;
+  border-radius: var(--apple-radius-md);
+  height: 44px;
+  line-height: 44px;
+  font-size: 15px;
+  padding: 0 12px !important;
+}
+
+.conversation-menu .ant-menu-item:hover {
+  background: rgba(0, 0, 0, 0.04) !important;
+}
+
+.conversation-menu .ant-menu-item-selected {
+  background: var(--apple-blue) !important;
+  color: white !important;
+}
+
+.conversation-menu .ant-menu-item-selected .anticon {
+  color: white !important;
+}
+
+.app-content {
+  flex: 1;
+  padding: 20px;
+  overflow: hidden;
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-tabs {
+  background: var(--apple-bg-primary);
+  flex: 1;
+  border-radius: var(--apple-radius-xl);
+  box-shadow: var(--apple-shadow-lg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.main-tabs .ant-tabs {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-tabs .ant-tabs-header {
+  padding: 0 20px;
+  margin: 0;
+  border-bottom: 1px solid var(--apple-gray-5);
+  flex-shrink: 0;
+}
+
+.main-tabs .ant-tabs-nav {
+  margin: 0;
+}
+
+.main-tabs .ant-tabs-tab {
+  padding: 16px 0;
+  font-size: 15px;
+}
+
+.main-tabs .ant-tabs-content {
+  flex: 1;
+  overflow: hidden;
+}
+
+.main-tabs .ant-tabs-tabpane {
+  height: 100%;
+  padding: 20px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  gap: 16px;
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  border-radius: var(--apple-radius-lg);
+  background: var(--apple-bg-secondary);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  min-height: 0;
+}
+
+.chat-input-area {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  background: var(--apple-bg-primary);
+  padding: 12px;
+  border-radius: var(--apple-radius-lg);
+  box-shadow: var(--apple-shadow-sm);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  flex-shrink: 0;
+}
+
+.chat-input-area .ant-input-textarea {
+  flex: 1;
+}
+
+.chat-input-area .ant-input-textarea textarea {
+  border-radius: var(--apple-radius-md) !important;
+  border: 1px solid var(--apple-gray-4);
+  resize: none !important;
+  font-size: 15px;
+  padding: 10px 14px;
+  line-height: 1.5;
+}
+
+.chat-input-area .ant-input-textarea textarea:focus {
+  border-color: var(--apple-blue) !important;
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.12) !important;
+}
+
+.chat-input-area .ant-btn-primary {
+  height: 38px;
+  padding: 0 20px;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.skill-list-container,
+.memory-list-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.skill-list-container .ant-card,
+.memory-list-container .ant-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--apple-radius-lg) !important;
+}
+
+.skill-list-container .ant-card-body,
+.memory-list-container .ant-card-body {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.skill-list-container .ant-card-head,
+.memory-list-container .ant-card-head {
+  min-height: 56px;
+  padding: 0 20px;
+  flex-shrink: 0;
+}
+
+.skill-list-container .ant-card-head-title,
+.memory-list-container .ant-card-head-title {
+  font-size: 17px;
+  font-weight: 600;
+  padding: 16px 0;
+}
+
+.skill-list-container .ant-card-extra,
+.memory-list-container .ant-card-extra {
+  padding: 16px 0;
+}
+
+.stats-panel {
+  padding: 8px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.stats-panel .ant-card {
+  border-radius: var(--apple-radius-lg) !important;
+  background: var(--apple-bg-primary);
+}
+
+.stat-card {
+  text-align: center;
+  padding: 8px 0;
+}
+
+.stat-card .ant-statistic-title {
+  font-size: 13px;
+  color: var(--apple-text-secondary);
+  margin-bottom: 8px;
+}
+
+.stat-card .ant-statistic-content {
+  font-size: 32px;
+  font-weight: 600;
+  letter-spacing: -1px;
+}
+
+.memory-distribution,
+.system-status {
+  height: 100%;
+  padding: 4px 0;
+}
+
+.memory-distribution .ant-card-head-title,
+.system-status .ant-card-head-title {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.status-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--apple-gray-5);
+  font-size: 15px;
+}
+
+.status-item:last-child {
+  border-bottom: none;
+}
+
+@media (max-width: 768px) {
+  .app-sider {
+    display: none;
+  }
+
+  .app-header {
+    padding: 0 16px !important;
+  }
+
+  .app-content {
+    padding: 12px;
+  }
+
+  .header-left h3 {
+    font-size: 15px !important;
+  }
+
+  .main-tabs .ant-tabs-tabpane {
+    padding: 12px;
+  }
+}

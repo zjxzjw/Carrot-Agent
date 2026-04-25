@@ -6,16 +6,21 @@ services:
     image: carrotagent/carrot-agent:latest
     container_name: carrot-agent
     environment:
-      - CARROT_DATA_DIR=/root/.carrot
+      - CARROT_DATA_DIR=/home/carrot/.carrot
       - CARROT_MODEL_PROVIDER=${CARROT_MODEL_PROVIDER:-openai}
       - CARROT_MODEL_NAME=${CARROT_MODEL_NAME:-gpt-4}
       - CARROT_API_KEY=${CARROT_API_KEY}
       - CARROT_BASE_URL=${CARROT_BASE_URL:-https://api.openai.com/v1}
     volumes:
-      - carrot-data:/root/.carrot
+      - carrot-data:/home/carrot/.carrot
+    ports:
+      - "8080:8080"
     restart: unless-stopped
-    stdin_open: true
-    tty: true
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/stats"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 volumes:
   carrot-data:

@@ -1,0 +1,142 @@
+.chat-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 20px;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.chat-message {
+  display: flex;
+  gap: 12px;
+  max-width: 75%;
+  animation: messageIn 0.25s ease-out;
+}
+
+@keyframes messageIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.chat-message.user {
+  align-self: flex-end;
+  flex-direction: row-reverse;
+}
+
+.chat-message.ai {
+  align-self: flex-start;
+}
+
+.message-avatar {
+  flex-shrink: 0;
+}
+
+.message-avatar .ant-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  box-shadow: var(--apple-shadow-sm);
+}
+
+.message-content {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.message-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 4px;
+}
+
+.chat-message.user .message-header {
+  flex-direction: row-reverse;
+}
+
+.message-sender {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--apple-text-secondary);
+}
+
+.chat-message.user .message-sender {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.message-time {
+  font-size: 11px;
+  color: var(--apple-text-tertiary);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.message-card {
+  max-width: 100%;
+  border-radius: 18px;
+  box-shadow: var(--apple-shadow-sm);
+  border: none !important;
+  background: var(--apple-bg-primary);
+  transition: box-shadow 0.2s ease;
+}
+
+.message-card:hover {
+  box-shadow: var(--apple-shadow-md);
+}
+
+.message-card.user {
+  background: var(--apple-blue);
+  border-radius: 18px 18px 4px 18px;
+}
+
+.message-card.ai {
+  background: var(--apple-bg-primary);
+  border-radius: 18px 18px 18px 4px;
+}
+
+.message-text {
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.6;
+  font-size: 15px;
+  color: var(--apple-text-primary);
+}
+
+.message-card.user .message-text {
+  color: #fff;
+}
+
+.chat-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 16px;
+  color: var(--apple-text-tertiary);
+}
+
+.chat-empty .anticon {
+  font-size: 56px;
+  opacity: 0.4;
+}
+
+.chat-empty .ant-typography {
+  font-size: 16px;
+  color: var(--apple-text-tertiary);
+}
+
+.chat-message .anticon {
+  font-size: 14px;
+}

@@ -1,4 +1,4 @@
-# Carrot Agent
+# 🥕 Carrot Agent
 
 基于 Go 语言开发的智能代理框架，专为容器化运行而设计，提供持久记忆、技能学习和工具调用等核心功能。
 
@@ -50,12 +50,14 @@ go run ./cmd/cli
 ## 🎯 功能特性
 
 ### 智能代理
+
 - **工具调用**：执行各种工具操作
 - **记忆管理**：分层记忆架构（快照、技能、情景、长期）
 - **技能学习**：自动生成和更新技能
 - **会话管理**：保持跨会话上下文
 
 ### 容器化
+
 - **Docker 支持**：官方 Docker 镜像
 - **Docker Compose**：一键部署
 - **数据持久化**：卷挂载确保数据不丢失
@@ -93,12 +95,12 @@ carrot-agent/
 
 ### 环境变量
 
-| 变量名 | 描述 | 默认值 |
-|--------|------|--------|
-| CARROT_API_KEY | 模型 API Key | - |
-| CARROT_MODEL_PROVIDER | 模型提供者 | openai |
-| CARROT_MODEL_NAME | 模型名称 | gpt-4 |
-| CARROT_BASE_URL | API 基础 URL | https://api.openai.com/v1 |
+| 变量名                     | 描述         | 默认值                         |
+| ----------------------- | ---------- | --------------------------- |
+| CARROT\_API\_KEY        | 模型 API Key | -                           |
+| CARROT\_MODEL\_PROVIDER | 模型提供者      | openai                      |
+| CARROT\_MODEL\_NAME     | 模型名称       | gpt-4                       |
+| CARROT\_BASE\_URL       | API 基础 URL | <https://api.openai.com/v1> |
 
 ### 配置文件
 
@@ -106,13 +108,13 @@ carrot-agent/
 
 ## 🤖 命令行操作
 
-| 命令 | 描述 |
-|------|------|
-| help | 显示帮助信息 |
-| quit/exit | 退出代理 |
-| reset | 重置对话历史 |
-| stats | 显示代理统计信息 |
-| skills | 列出可用技能 |
+| 命令        | 描述       |
+| --------- | -------- |
+| help      | 显示帮助信息   |
+| quit/exit | 退出代理     |
+| reset     | 重置对话历史   |
+| stats     | 显示代理统计信息 |
+| skills    | 列出可用技能   |
 
 ## 📈 开发路线
 
@@ -129,12 +131,15 @@ MIT License
 ## 🤔 常见问题
 
 ### Q: 如何配置模型？
+
 A: 在 `config.yaml` 中设置 `model` 部分的参数，或通过环境变量配置。
 
 ### Q: 数据存储在哪里？
+
 A: 数据存储在 `~/.carrot` 目录下的 SQLite 数据库中。
 
 ### Q: 如何添加自定义工具？
+
 A: 在 `pkg/agent/agent.go` 的 `registerDefaultTools` 方法中注册新工具。
 
 ## 📞 支持

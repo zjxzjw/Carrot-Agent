@@ -25,7 +25,7 @@ var (
 
 func main() {
 	fmt.Printf("Carrot Agent v%s (build: %s)\n", Version, BuildTime)
-	fmt.Println("Type 'help' for available commands, 'quit' to exit.\n")
+	fmt.Println("Type 'help' for available commands, 'quit' to exit.")
 
 	cfg := loadConfig()
 
@@ -192,7 +192,7 @@ func interactiveLoop(ctx context.Context, ag *agent.AIAgent, scanner *bufio.Scan
 }
 
 func printHelp() {
-	fmt.Println(`
+	fmt.Print(`
 Available Commands:
   help       - Show this help message
   quit/exit  - Exit the agent
