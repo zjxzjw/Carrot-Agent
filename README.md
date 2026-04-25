@@ -1,6 +1,8 @@
 # 🥕 Carrot Agent
 
-[中文版本 (Chinese Version)](readme_zh.md)
+![Carrot Agent Logo](logo.png)
+
+[中文版本 (Chinese Version)](README_zh.md)
 
 An intelligent agent framework developed in Go, designed for containerized operation, providing core features such as persistent memory, skill learning, and tool calling.
 
@@ -13,6 +15,8 @@ An intelligent agent framework developed in Go, designed for containerized opera
 - **Self-evolution**: Automatically generate reusable skills after completing complex tasks
 - **High Performance**: Go language implementation with low resource consumption
 - **Secure Isolation**: Runs as non-root user with least privilege principle
+- **API Interface**: RESTful API for integration with other systems
+- **Web UI**: Built-in web interface for easy management
 
 ## 📦 Quick Start
 
@@ -25,12 +29,16 @@ cd carrot-agent
 
 # Configure environment variables
 cp .env.example .env
-vim .env  # Fill in your API Key
+# Edit .env file to add your API key
+# Example: CARROT_API_KEY=your-api-key
 
 # Start container
 docker-compose up -d
 
-# Enter container
+# Access web interface
+# Open http://localhost:8080 in your browser
+
+# Enter container (for CLI access)
 docker exec -it carrot-agent /bin/sh
 /app/carrot-agent
 ```
@@ -41,12 +49,19 @@ docker exec -it carrot-agent /bin/sh
 # Install dependencies
 go mod tidy
 
+# Create configuration directory
+mkdir -p ~/.carrot
+
 # Configure
 cp config.yaml.example ~/.carrot/config.yaml
-vim ~/.carrot/config.yaml
+# Edit ~/.carrot/config.yaml to add your API key
 
-# Run
+# Run CLI
 go run ./cmd/cli
+
+# Or run API server
+go run ./cmd/api
+# Then access http://localhost:8080
 ```
 
 ## 🎯 Features
@@ -69,29 +84,43 @@ go run ./cmd/cli
 
 ```
 carrot-agent/
-├── cmd/cli/main.go           # CLI entry point
-├── pkg/
-│   ├── agent/               # Core agent engine
-│   │   ├── agent.go         # Agent core logic
-│   │   ├── memory/          # Hierarchical memory management
-│   │   ├── skill/           # Skill system
-│   │   ├── model/           # Model providers
-│   │   └── tool/            # Tool registry
-│   └── storage/            # Storage management
-├── config/                # Configuration management
-├── Dockerfile             # Containerization build
-├── docker-compose.yaml    # Docker Compose deployment
-├── config.yaml.example    # Configuration example
-└── ARCHITECTURE.md       # Architecture documentation
+├── cmd/                    # Command line tools
+│   ├── api/main.go         # API server entry point
+│   └── cli/main.go         # CLI entry point
+├── config/                 # Configuration management
+├── pkg/                    # Core packages
+│   ├── agent/              # Core agent engine
+│   │   ├── memory/         # Hierarchical memory management
+│   │   ├── model/          # Model providers (OpenAI, Claude)
+│   │   ├── skill/          # Skill system
+│   │   ├── tool/           # Tool registry
+│   │   ├── agent.go        # Agent core logic
+│   │   └── agent_test.go   # Agent tests
+│   ├── logger/             # Logging system
+│   └── storage/            # Storage management (SQLite)
+├── ui/                     # Web interface
+├── website/                # Documentation website
+├── Dockerfile              # Containerization build
+├── docker-compose.yaml     # Docker Compose deployment
+├── config.yaml.example     # Configuration example
+├── ARCHITECTURE.md         # Architecture documentation
+├── README.md               # English documentation
+├── README_zh.md            # Chinese documentation
+├── go.mod                  # Go module file
+└── go.sum                  # Go module checksums
 ```
 
 ## 🛠️ Tech Stack
 
 - **Language**: Go 1.22+
-- **Storage**: SQLite
+- **Storage**: SQLite (embedded database)
 - **Configuration**: YAML
-- **Container**: Docker
-- **Models**: OpenAI GPT, Claude
+- **Container**: Docker, Docker Compose
+- **Frontend**: React, TypeScript, Ant Design
+- **API**: RESTful HTTP API
+- **Models**: OpenAI GPT, Claude (Anthropic)
+- **Logging**: Structured logging
+- **Testing**: Go testing framework
 
 ## 📚 Configuration
 

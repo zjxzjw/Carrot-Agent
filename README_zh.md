@@ -1,5 +1,9 @@
 # 🥕 Carrot Agent
 
+![Carrot Agent Logo](logo.png)
+
+[English Version](README.md)
+
 基于 Go 语言开发的智能代理框架，专为容器化运行而设计，提供持久记忆、技能学习和工具调用等核心功能。
 
 ## 🌟 核心特性
@@ -11,6 +15,8 @@
 - **自进化能力**：完成复杂任务后自动生成可复用技能
 - **高性能**：Go 语言实现，低资源占用
 - **安全隔离**：非 root 用户运行，最小权限原则
+- **API 接口**：RESTful API 用于与其他系统集成
+- **Web 界面**：内置 Web 界面，方便管理
 
 ## 📦 快速开始
 
@@ -23,12 +29,16 @@ cd carrot-agent
 
 # 配置环境变量
 cp .env.example .env
-vim .env  # 填写你的 API Key
+# 编辑 .env 文件添加你的 API key
+# 示例：CARROT_API_KEY=your-api-key
 
 # 启动容器
 docker-compose up -d
 
-# 进入容器
+# 访问 Web 界面
+# 在浏览器中打开 http://localhost:8080
+
+# 进入容器（用于 CLI 访问）
 docker exec -it carrot-agent /bin/sh
 /app/carrot-agent
 ```
@@ -39,12 +49,19 @@ docker exec -it carrot-agent /bin/sh
 # 安装依赖
 go mod tidy
 
+# 创建配置目录
+mkdir -p ~/.carrot
+
 # 配置
 cp config.yaml.example ~/.carrot/config.yaml
-vim ~/.carrot/config.yaml
+# 编辑 ~/.carrot/config.yaml 添加你的 API key
 
-# 运行
+# 运行 CLI
 go run ./cmd/cli
+
+# 或运行 API 服务器
+go run ./cmd/api
+# 然后访问 http://localhost:8080
 ```
 
 ## 🎯 功能特性
@@ -67,29 +84,43 @@ go run ./cmd/cli
 
 ```
 carrot-agent/
-├── cmd/cli/main.go           # CLI 入口
-├── pkg/
-│   ├── agent/               # 核心代理引擎
-│   │   ├── agent.go         # 代理核心逻辑
-│   │   ├── memory/          # 分层记忆管理
-│   │   ├── skill/           # 技能系统
-│   │   ├── model/           # 模型提供者
-│   │   └── tool/            # 工具注册表
-│   └── storage/            # 存储管理
-├── config/                # 配置管理
-├── Dockerfile             # 容器化构建
-├── docker-compose.yaml    # Docker Compose 部署
-├── config.yaml.example    # 配置示例
-└── ARCHITECTURE.md       # 架构文档
+├── cmd/                    # 命令行工具
+│   ├── api/main.go         # API 服务器入口
+│   └── cli/main.go         # CLI 入口
+├── config/                 # 配置管理
+├── pkg/                    # 核心包
+│   ├── agent/              # 核心代理引擎
+│   │   ├── memory/         # 分层记忆管理
+│   │   ├── model/          # 模型提供者 (OpenAI, Claude)
+│   │   ├── skill/          # 技能系统
+│   │   ├── tool/           # 工具注册表
+│   │   ├── agent.go        # 代理核心逻辑
+│   │   └── agent_test.go   # 代理测试
+│   ├── logger/             # 日志系统
+│   └── storage/            # 存储管理 (SQLite)
+├── ui/                     # Web 界面
+├── website/                # 文档网站
+├── Dockerfile              # 容器化构建
+├── docker-compose.yaml     # Docker Compose 部署
+├── config.yaml.example     # 配置示例
+├── ARCHITECTURE.md         # 架构文档
+├── README.md               # 英文文档
+├── README_zh.md            # 中文文档
+├── go.mod                  # Go 模块文件
+└── go.sum                  # Go 模块校验和
 ```
 
 ## 🛠️ 技术栈
 
 - **语言**：Go 1.22+
-- **存储**：SQLite
+- **存储**：SQLite (嵌入式数据库)
 - **配置**：YAML
-- **容器**：Docker
-- **模型**：OpenAI GPT、Claude
+- **容器**：Docker、Docker Compose
+- **前端**：React、TypeScript、Ant Design
+- **API**：RESTful HTTP API
+- **模型**：OpenAI GPT、Claude (Anthropic)
+- **日志**：结构化日志
+- **测试**：Go 测试框架
 
 ## 📚 配置说明
 
