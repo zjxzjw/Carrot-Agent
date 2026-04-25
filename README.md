@@ -2,9 +2,30 @@
 
 ![Carrot Agent Logo](logo.png)
 
+[![GitHub stars](https://img.shields.io/github/stars/zjxzjw/Carrot-Agent.svg)](https://github.com/zjxzjw/Carrot-Agent/stargazers)
+[![GitHub license](https://img.shields.io/github/license/zjxzjw/Carrot-Agent.svg)](https://github.com/zjxzjw/Carrot-Agent/blob/main/LICENSE)
+[![Go Report Card](https://goreportcard.com/badge/github.com/zjxzjw/Carrot-Agent)](https://goreportcard.com/report/github.com/zjxzjw/Carrot-Agent)
+
 [中文版本 (Chinese Version)](README_zh.md)
 
 An intelligent agent framework developed in Go, designed for containerized operation, providing core features such as persistent memory, skill learning, and tool calling.
+
+## 📑 Table of Contents
+
+- [📋 Version](#-version)
+- [🌟 Core Features](#-core-features)
+- [📦 Quick Start](#-quick-start)
+- [🎯 Features](#-features)
+- [📁 Project Structure](#-project-structure)
+- [🛠️ Tech Stack](#-tech-stack)
+- [📚 Configuration](#-configuration)
+- [🤖 Command Line Operations](#-command-line-operations)
+- [📖 Usage Examples](#-usage-examples)
+- [📈 Development Roadmap](#-development-roadmap)
+- [📄 License](#-license)
+- [🤔 FAQ](#-faq)
+- [📞 Support](#-support)
+- [🌐 Documentation](#-documentation)
 
 ## 📋 Version
 
@@ -137,6 +158,22 @@ carrot-agent/
 | CARROT\_MODEL\_NAME     | Model Name     | gpt-4                       |
 | CARROT\_BASE\_URL       | API Base URL   | <https://api.openai.com/v1> |
 
+### Authentication
+
+Carrot Agent now includes authentication functionality. The default credentials are:
+- Username: `admin`
+- Password: `admin123`
+
+You can configure these credentials in the `auth` section of the config.yaml file:
+
+```yaml
+auth:
+  username: your-username
+  password: your-password
+```
+
+When accessing the web interface, you will be redirected to the login page first. After successful login, you will be able to access all features.
+
 ### Configuration File
 
 Refer to the `config.yaml.example` file for detailed configuration parameters.
@@ -239,3 +276,11 @@ A: Register new tools in the `registerDefaultTools` method in `pkg/agent/agent.g
 ## 📞 Support
 
 For questions or suggestions, please submit an Issue or contact us.
+
+## 🌐 Documentation
+
+For detailed documentation, please visit our official website:
+
+- [Official Documentation](https://zjxzjw.github.io/Carrot-Agent/)
+- [API Reference](https://zjxzjw.github.io/Carrot-Agent/api/overview)
+- [Usage Examples](https://zjxzjw.github.io/Carrot-Agent/examples/basic)

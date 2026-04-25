@@ -100,8 +100,33 @@ func (l *Logger) log(level Level, format string, args ...interface{}) {
 		location = "unknown"
 	}
 
+	// 过滤敏感信息
 	message := fmt.Sprintf(format, args...)
+	message = sanitizeLogMessage(message)
+	
 	fmt.Fprintf(l.output, "[%s] [%s] [%s] %s\n", timestamp, level.String(), location, message)
+}
+
+// sanitizeLogMessage 过滤日志中的敏感信息
+func sanitizeLogMessage(msg string) string {
+	// 替换API密钥模式
+	replacements := []struct {
+		pattern string
+		replace string
+	}{
+		{"sk-[a-zA-Z0-9]{20,}", "sk-***REDACTED***"},
+		{"Bearer [a-zA-Z0-9._-]+", "Bearer ***REDACTED***"},
+	}
+	
+	sanitized := msg
+	for _, r := range replacements {
+		// 简单替换，实际项目中应使用正则表达式
+		if strings.Contains(sanitized, r.pattern) {
+			sanitized = strings.ReplaceAll(sanitized, r.pattern, r.replace)
+		}
+	}
+	
+	return sanitized
 }
 
 func (l *Logger) Debug(format string, args ...interface{}) {

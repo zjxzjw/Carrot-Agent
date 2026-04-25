@@ -83,12 +83,12 @@ func (c *Config) Validate() []error {
 		errors = append(errors, fmt.Errorf("skill_nudge_interval cannot be negative, got %d", c.Agent.SkillNudgeInt))
 	}
 
-	if c.Auth.Username == "" {
-		errors = append(errors, fmt.Errorf("auth username is required"))
+	// Auth validation - only warn if both are empty (not configured)
+	if c.Auth.Username == "" && c.Auth.Password != "" {
+		errors = append(errors, fmt.Errorf("auth username is required when password is set"))
 	}
-
-	if c.Auth.Password == "" {
-		errors = append(errors, fmt.Errorf("auth password is required"))
+	if c.Auth.Password == "" && c.Auth.Username != "" {
+		errors = append(errors, fmt.Errorf("auth password is required when username is set"))
 	}
 
 	return errors
@@ -143,8 +143,8 @@ func Default() *Config {
 			BlockedCmds:  []string{"rm -rf /", ":(){ :|:& };:"},
 		},
 		Auth: AuthConfig{
-			Username: "admin",
-			Password: "admin123",
+			Username: "",
+			Password: "",
 		},
 	}
 }

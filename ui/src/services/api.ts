@@ -31,6 +31,10 @@ class ApiService {
   private setupInterceptors(): void {
     this.instance.interceptors.request.use(
       (config: InternalAxiosRequestConfig) => {
+        const sessionId = localStorage.getItem('sessionId')
+        if (sessionId && config.headers) {
+          config.headers['Authorization'] = sessionId
+        }
         return config
       },
       (error: AxiosError) => {

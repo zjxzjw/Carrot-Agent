@@ -95,5 +95,27 @@
     "reset": "Reset",
     "close": "Close",
     "required": "is required"
+  },
+  "login": {
+    "title": "Login",
+    "subtitle": "Please enter your username and password to login",
+    "button": {
+      "login": "Login"
+    },
+    "placeholder": {
+      "username": "Enter username",
+      "password": "Enter password"
+    },
+    "error": {
+      "title": "Login Failed",
+      "username_required": "Please enter username",
+      "password_required": "Please enter password",
+      "invalid_credentials": "Invalid username or password",
+      "network_error": "Network connection failed, please check your network"
+    },
+    "default_credentials": "Default username: admin, password: admin123"
+  },
+  "header": {
+    "logout": "Logout"
   }
 }

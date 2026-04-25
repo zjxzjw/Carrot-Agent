@@ -47,13 +47,31 @@ func NewStore(dbPath string) (*Store, error) {
 		return nil, fmt.Errorf("failed to create db directory: %w", err)
 	}
 
-	db, err := sql.Open("sqlite3", dbPath+"?_foreign_keys=on")
+	db, err := sql.Open("sqlite3", dbPath+"?_foreign_keys=on&_journal_mode=WAL&_busy_timeout=5000")
 	if err != nil {
 		return nil, fmt.Errorf("failed to open db: %w", err)
 	}
 
-	db.SetMaxOpenConns(1)
+	// 优化SQLite配置
+	db.SetMaxOpenConns(1) // SQLite只支持一个写连接
 	db.SetMaxIdleConns(1)
+	db.SetConnMaxLifetime(time.Hour)
+
+	// 设置PRAGMA优化
+	pragmas := []string{
+		"PRAGMA journal_mode=WAL",
+		"PRAGMA synchronous=NORMAL",
+		"PRAGMA cache_size=-64000", // 64MB cache
+		"PRAGMA temp_store=MEMORY",
+		"PRAGMA mmap_size=268435456", // 256MB
+	}
+	
+	for _, pragma := range pragmas {
+		if _, err := db.Exec(pragma); err != nil {
+			db.Close()
+			return nil, fmt.Errorf("failed to set pragma %s: %w", pragma, err)
+		}
+	}
 
 	store := &Store{db: db}
 	if err := store.init(); err != nil {
@@ -103,7 +121,15 @@ func (s *Store) init() error {
 }
 
 func (s *Store) Close() error {
-	return s.db.Close()
+	if s.db != nil {
+		return s.db.Close()
+	}
+	return nil
+}
+
+// Ping 检查数据库连接是否正常
+func (s *Store) Ping() error {
+	return s.db.Ping()
 }
 
 func (s *Store) SaveSession(session *Session) error {

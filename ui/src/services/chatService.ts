@@ -17,7 +17,7 @@ export interface ChatResponse {
 
 export const chatService = {
   sendMessage: (data: ChatMessage) => {
-    return apiService.post<ChatResponse>('/chat', data as Record<string, unknown>)
+    return apiService.post<ChatResponse>('/api/chat', data as Record<string, unknown>)
   },
 }
 

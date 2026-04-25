@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import { Layout, Menu, ConfigProvider, Select, Spin } from 'antd'
+import { Layout, Menu, ConfigProvider, Select, Spin, Button } from 'antd'
 import zhCN from 'antd/locale/zh_CN'
 import enUS from 'antd/locale/en_US'
 import {
@@ -9,9 +9,13 @@ import {
   HistoryOutlined,
   BarChartOutlined,
   SettingOutlined,
-  GlobalOutlined
+  GlobalOutlined,
+  LogoutOutlined
 } from '@ant-design/icons'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
+import { useDispatch } from 'react-redux'
+import { logout } from './store/authSlice'
 import i18n from './i18n'
 import { ChatPage, SkillsPage, MemoryPage, SessionsPage, StatsPage, ConfigPage } from './pages'
 import logo from './assets/logo.png'
@@ -22,6 +26,13 @@ const App: React.FC = () => {
   const [current, setCurrent] = useState('chat')
   const [loading, setLoading] = useState(false)
   const { t, i18n: i18nInstance } = useTranslation()
+  const navigate = useNavigate()
+  const dispatch = useDispatch()
+
+  const handleLogout = () => {
+    dispatch(logout())
+    navigate('/login')
+  }
 
   const items = [
     { key: 'chat', label: t('menu.chat'), icon: <MessageOutlined /> },
@@ -117,7 +128,7 @@ const App: React.FC = () => {
             <span style={{ fontSize: 14, color: '#666' }}>
               {t(`menu.${current}`)}
             </span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
               <GlobalOutlined style={{ color: '#666' }} />
               <Select
                 value={i18n.language}
@@ -130,6 +141,14 @@ const App: React.FC = () => {
                 disabled={loading}
               />
               {loading && <Spin size="small" />}
+              <Button 
+                type="text" 
+                icon={<LogoutOutlined />} 
+                onClick={handleLogout}
+                style={{ color: '#666' }}
+              >
+                {t('header.logout')}
+              </Button>
             </div>
           </Header>
           <Content 

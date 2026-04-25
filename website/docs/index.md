@@ -15,6 +15,9 @@ hero:
     - theme: alt
       text: View on GitHub
       link: https://github.com/zjxzjw/Carrot-Agent
+    - theme: alt
+      text: API Reference
+      link: /api/overview
 
 features:
   - icon: 🧠
@@ -44,7 +47,28 @@ features:
   - icon: 🖥️
     title: Web Interface
     details: Built-in React-based web UI for easy management and monitoring
+
 ---
+
+## 🚀 Why Carrot Agent?
+
+Carrot Agent is designed to be the most flexible and powerful intelligent agent framework available today. Whether you're building a personal assistant, automating complex workflows, or creating a custom AI solution, Carrot Agent provides the tools and infrastructure you need to succeed.
+
+### Key Benefits
+
+- **Persistent Memory**: Never lose context across conversations
+- **Automatic Skill Learning**: Continuously improve performance
+- **Extensible Architecture**: Easy to add custom tools and integrations
+- **Containerized Deployment**: Simple and secure deployment options
+- **Multi-Model Support**: Work with your preferred LLM provider
+
+## 🔧 Use Cases
+
+- **Personal Assistant**: Intelligent companion that remembers your preferences and learns from interactions
+- **Workflow Automation**: Automate complex tasks with minimal configuration
+- **Knowledge Base**: Build a persistent knowledge system that grows over time
+- **API Integration**: Connect with external services and systems
+- **Research Assistant**: Help with data collection, analysis, and synthesis
 
 <style>
 :root {
@@ -64,5 +88,19 @@ features:
   :root {
     --vp-home-hero-image-filter: blur(68px);
   }
+}
+
+/* Add custom animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.features {
+  animation: fadeIn 0.6s ease-out;
+}
+
+.hero {
+  animation: fadeIn 0.4s ease-out;
 }
 </style>

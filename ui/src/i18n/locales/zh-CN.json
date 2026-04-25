@@ -95,5 +95,27 @@
     "reset": "重置",
     "close": "关闭",
     "required": "不能为空"
+  },
+  "login": {
+    "title": "登录",
+    "subtitle": "请输入账号密码登录系统",
+    "button": {
+      "login": "登录"
+    },
+    "placeholder": {
+      "username": "请输入用户名",
+      "password": "请输入密码"
+    },
+    "error": {
+      "title": "登录失败",
+      "username_required": "请输入用户名",
+      "password_required": "请输入密码",
+      "invalid_credentials": "用户名或密码错误",
+      "network_error": "网络连接失败，请检查网络"
+    },
+    "default_credentials": "默认账号: admin, 密码: admin123"
+  },
+  "header": {
+    "logout": "退出登录"
   }
 }

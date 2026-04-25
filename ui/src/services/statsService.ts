@@ -13,7 +13,7 @@ export interface StatsResponse {
 
 export const statsService = {
   fetchStats: () => {
-    return apiService.get<StatsResponse>('/stats')
+    return apiService.get<StatsResponse>('/api/stats')
   },
 }
 

@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -9,7 +11,9 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strconv"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -25,9 +29,73 @@ var (
 	aiAgent *agent.AIAgent
 	store   *storage.Store
 	appConfig *config.Config
-	sessions = make(map[string]time.Time) // 存储会话ID和过期时间
+	sessions = make(map[string]*sessionInfo) // 存储会话信息
+	sessionMu sync.RWMutex // 保护sessions map的并发访问
 	sessionTimeout = 24 * time.Hour // 会话超时时间
 )
+
+type sessionInfo struct {
+	UserID    string
+	CreatedAt time.Time
+	ExpiresAt time.Time
+}
+
+type rateLimiter struct {
+	mu       sync.RWMutex
+	clients  map[string]*clientRate
+	maxReqs  int
+	window   time.Duration
+}
+
+type clientRate struct {
+	count    int
+	resetAt  time.Time
+}
+
+var globalRateLimiter *rateLimiter
+
+func newRateLimiter(maxReqs int, window time.Duration) *rateLimiter {
+	return &rateLimiter{
+		clients: make(map[string]*clientRate),
+		maxReqs: maxReqs,
+		window:  window,
+	}
+}
+
+func (rl *rateLimiter) Allow(ip string) bool {
+	rl.mu.Lock()
+	defer rl.mu.Unlock()
+
+	now := time.Now()
+	client, exists := rl.clients[ip]
+
+	if !exists || now.After(client.resetAt) {
+		rl.clients[ip] = &clientRate{
+			count:   1,
+			resetAt: now.Add(rl.window),
+		}
+		return true
+	}
+
+	if client.count >= rl.maxReqs {
+		return false
+	}
+
+	client.count++
+	return true
+}
+
+func (rl *rateLimiter) Cleanup() {
+	rl.mu.Lock()
+	defer rl.mu.Unlock()
+
+	now := time.Now()
+	for ip, client := range rl.clients {
+		if now.After(client.resetAt) {
+			delete(rl.clients, ip)
+		}
+	}
+}
 
 func loadConfig() *config.Config {
 	configPaths := []string{
@@ -65,15 +133,39 @@ func applyEnvOverrides(cfg *config.Config) {
 	if provider := os.Getenv("CARROT_MODEL_PROVIDER"); provider != "" {
 		cfg.Model.Provider = provider
 	}
+	// Auth configuration from environment
+	if username := os.Getenv("CARROT_AUTH_USERNAME"); username != "" {
+		cfg.Auth.Username = username
+	}
+	if password := os.Getenv("CARROT_AUTH_PASSWORD"); password != "" {
+		cfg.Auth.Password = password
+	}
+	// Server configuration from environment
+	if port := os.Getenv("CARROT_SERVER_PORT"); port != "" {
+		if p, err := strconv.Atoi(port); err == nil && p > 0 {
+			cfg.Server.Port = p
+		}
+	}
+	if host := os.Getenv("CARROT_SERVER_HOST"); host != "" {
+		cfg.Server.Host = host
+	}
 }
 
-func generateSessionID() string {
-	return fmt.Sprintf("%d", time.Now().UnixNano())
+func generateSessionID() (string, error) {
+	bytes := make([]byte, 32)
+	if _, err := rand.Read(bytes); err != nil {
+		return "", fmt.Errorf("failed to generate random bytes: %w", err)
+	}
+	return hex.EncodeToString(bytes), nil
 }
 
 func cleanupExpiredSessions() {
-	for sessionID, expiry := range sessions {
-		if time.Now().After(expiry) {
+	sessionMu.Lock()
+	defer sessionMu.Unlock()
+	
+	now := time.Now()
+	for sessionID, info := range sessions {
+		if now.After(info.ExpiresAt) {
 			delete(sessions, sessionID)
 		}
 	}
@@ -93,19 +185,62 @@ func authMiddleware(next http.HandlerFunc) http.HandlerFunc {
 		// 从请求头获取会话ID
 		sessionID := r.Header.Get("Authorization")
 		if sessionID == "" {
-			http.Error(w, "Unauthorized: No session ID provided", http.StatusUnauthorized)
+			http.Error(w, `{"error":"Unauthorized: No session ID provided"}`, http.StatusUnauthorized)
 			return
 		}
 
 		// 验证会话是否有效
-		expiry, ok := sessions[sessionID]
-		if !ok || time.Now().After(expiry) {
-			http.Error(w, "Unauthorized: Invalid or expired session", http.StatusUnauthorized)
+		sessionMu.RLock()
+		info, ok := sessions[sessionID]
+		sessionMu.RUnlock()
+		
+		if !ok || time.Now().After(info.ExpiresAt) {
+			http.Error(w, `{"error":"Unauthorized: Invalid or expired session"}`, http.StatusUnauthorized)
 			return
 		}
 
 		// 延长会话过期时间
-		sessions[sessionID] = time.Now().Add(sessionTimeout)
+		sessionMu.Lock()
+		if info, exists := sessions[sessionID]; exists {
+			info.ExpiresAt = time.Now().Add(sessionTimeout)
+		}
+		sessionMu.Unlock()
+
+		next(w, r)
+	}
+}
+
+func rateLimitMiddleware(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// 获取客户端IP
+		ip := r.RemoteAddr
+		if forwarded := r.Header.Get("X-Forwarded-For"); forwarded != "" {
+			ip = strings.Split(forwarded, ",")[0]
+		}
+
+		if !globalRateLimiter.Allow(ip) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusTooManyRequests)
+			json.NewEncoder(w).Encode(map[string]string{
+				"error": "Rate limit exceeded. Please try again later.",
+			})
+			return
+		}
+
+		next(w, r)
+	}
+}
+
+func securityHeadersMiddleware(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// 设置安全头
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		w.Header().Set("X-Frame-Options", "DENY")
+		w.Header().Set("X-XSS-Protection", "1; mode=block")
+		w.Header().Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+		w.Header().Set("Content-Security-Policy", "default-src 'self'")
+		w.Header().Set("Cache-Control", "no-store, no-cache, must-revalidate")
+		w.Header().Set("Pragma", "no-cache")
 
 		next(w, r)
 	}
@@ -166,6 +301,9 @@ func main() {
 	cfg := loadConfig()
 	appConfig = cfg
 
+	// 初始化速率限制器（每分钟最多100个请求）
+	globalRateLimiter = newRateLimiter(100, time.Minute)
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -183,24 +321,42 @@ func main() {
 
 	aiAgent = agentInstance
 
-	http.HandleFunc("/health", handleHealth)
-	http.HandleFunc("/api/login", handleLogin)
-	http.HandleFunc("/api/chat", authMiddleware(handleChat))
-	http.HandleFunc("/api/skills", authMiddleware(handleSkills))
-	http.HandleFunc("/api/memory", authMiddleware(handleMemory))
-	http.HandleFunc("/api/stats", authMiddleware(handleStats))
-	http.HandleFunc("/api/session/", authMiddleware(handleSession))
-	http.HandleFunc("/api/config", authMiddleware(handleConfig))
-	http.HandleFunc("/api/models", authMiddleware(handleModels))
+	http.HandleFunc("/health", securityHeadersMiddleware(handleHealth))
+	http.HandleFunc("/api/login", securityHeadersMiddleware(rateLimitMiddleware(handleLogin)))
+	http.HandleFunc("/api/chat", authMiddleware(securityHeadersMiddleware(rateLimitMiddleware(handleChat))))
+	http.HandleFunc("/api/skills", authMiddleware(securityHeadersMiddleware(rateLimitMiddleware(handleSkills))))
+	http.HandleFunc("/api/memory", authMiddleware(securityHeadersMiddleware(rateLimitMiddleware(handleMemory))))
+	http.HandleFunc("/api/stats", authMiddleware(securityHeadersMiddleware(rateLimitMiddleware(handleStats))))
+	http.HandleFunc("/api/session/", authMiddleware(securityHeadersMiddleware(rateLimitMiddleware(handleSession))))
+	http.HandleFunc("/api/config", authMiddleware(securityHeadersMiddleware(rateLimitMiddleware(handleConfig))))
+	http.HandleFunc("/api/models", authMiddleware(securityHeadersMiddleware(rateLimitMiddleware(handleModels))))
 
 	server := &http.Server{
-		Addr:    fmt.Sprintf(":%d", cfg.Server.Port),
-		Handler: nil,
+		Addr:         fmt.Sprintf(":%d", cfg.Server.Port),
+		Handler:      nil,
+		ReadTimeout:  15 * time.Second,
+		WriteTimeout: 60 * time.Second,
+		IdleTimeout:  120 * time.Second,
+		MaxHeaderBytes: 1 << 20, // 1MB
 	}
 
 	go func() {
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("Failed to start server: %v", err)
+		}
+	}()
+
+	// 启动后台清理任务
+	go func() {
+		ticker := time.NewTicker(5 * time.Minute)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ticker.C:
+				globalRateLimiter.Cleanup()
+			case <-ctx.Done():
+				return
+			}
 		}
 	}()
 
@@ -234,7 +390,7 @@ func handleHealth(w http.ResponseWriter, r *http.Request) {
 
 func handleLogin(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		http.Error(w, `{"error":"Method not allowed"}`, http.StatusMethodNotAllowed)
 		return
 	}
 
@@ -244,26 +400,41 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request", http.StatusBadRequest)
+		http.Error(w, `{"error":"Invalid request"}`, http.StatusBadRequest)
 		return
 	}
 
 	// 验证用户名和密码
-	if req.Username != appConfig.Auth.Username || req.Password != appConfig.Auth.Password {
-		http.Error(w, "Invalid username or password", http.StatusUnauthorized)
+	if appConfig.Auth.Username == "" || appConfig.Auth.Password == "" {
+		http.Error(w, `{"error":"Authentication not configured. Please set username and password in config."}`, http.StatusServiceUnavailable)
 		return
 	}
 
-	// 生成会话ID
-	sessionID := generateSessionID()
-	sessions[sessionID] = time.Now().Add(sessionTimeout)
+	if req.Username != appConfig.Auth.Username || req.Password != appConfig.Auth.Password {
+		http.Error(w, `{"error":"Invalid username or password"}`, http.StatusUnauthorized)
+		return
+	}
 
-	response := struct {
-		SessionID string `json:"session_id"`
-		Message   string `json:"message"`
-	}{
-		SessionID: sessionID,
-		Message:   "Login successful",
+	// 生成安全的会话ID
+	sessionID, err := generateSessionID()
+	if err != nil {
+		http.Error(w, `{"error":"Failed to generate session"}`, http.StatusInternalServerError)
+		return
+	}
+
+	now := time.Now()
+	sessionMu.Lock()
+	sessions[sessionID] = &sessionInfo{
+		UserID:    req.Username,
+		CreatedAt: now,
+		ExpiresAt: now.Add(sessionTimeout),
+	}
+	sessionMu.Unlock()
+
+	response := map[string]interface{}{
+		"session_id": sessionID,
+		"message":    "Login successful",
+		"expires_in": int(sessionTimeout.Seconds()),
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -332,39 +503,48 @@ func handleDeleteSession(w http.ResponseWriter, r *http.Request, sessionID strin
 
 func handleChat(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		http.Error(w, `{"error":"Method not allowed"}`, http.StatusMethodNotAllowed)
 		return
 	}
 
 	var req struct {
-		Message string `json:"message"`
+		Message   string `json:"message"`
 		SessionID string `json:"session_id"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request", http.StatusBadRequest)
+		http.Error(w, `{"error":"Invalid request body"}`, http.StatusBadRequest)
+		return
+	}
+
+	// 输入验证
+	if req.Message == "" {
+		http.Error(w, `{"error":"Message is required"}`, http.StatusBadRequest)
+		return
+	}
+
+	if len(req.Message) > 10000 {
+		http.Error(w, `{"error":"Message too long (max 10000 characters)"}`, http.StatusBadRequest)
 		return
 	}
 
 	resp, err := aiAgent.RunConversation(r.Context(), req.Message)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Failed to get response: %v", err), http.StatusInternalServerError)
+		log.Printf("Error in chat: %v", err)
+		http.Error(w, fmt.Sprintf(`{"error":"Failed to get response: %s"}`, err.Error()), http.StatusInternalServerError)
 		return
 	}
 
 	if len(resp.Choices) > 0 {
-		response := struct {
-			Message string `json:"message"`
-			Usage model.Usage `json:"usage"`
-		}{
-			Message: resp.Choices[0].Message.Content,
-			Usage: resp.Usage,
+		response := map[string]interface{}{
+			"message": resp.Choices[0].Message.Content,
+			"usage":   resp.Usage,
 		}
 
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(response)
 	} else {
-		http.Error(w, "No response from model", http.StatusInternalServerError)
+		http.Error(w, `{"error":"No response from model"}`, http.StatusInternalServerError)
 	}
 }
 
@@ -396,25 +576,40 @@ func handleListSkills(w http.ResponseWriter, r *http.Request) {
 
 func handleCreateSkill(w http.ResponseWriter, r *http.Request) {
 	var req struct {
-		Name string `json:"name"`
+		Name        string `json:"name"`
 		Description string `json:"description"`
-		Content string `json:"content"`
+		Content     string `json:"content"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request", http.StatusBadRequest)
+		http.Error(w, `{"error":"Invalid request body"}`, http.StatusBadRequest)
+		return
+	}
+
+	// 输入验证
+	if req.Name == "" || req.Description == "" || req.Content == "" {
+		http.Error(w, `{"error":"Name, description and content are required"}`, http.StatusBadRequest)
+		return
+	}
+
+	if len(req.Name) > 100 {
+		http.Error(w, `{"error":"Name too long (max 100 characters)"}`, http.StatusBadRequest)
+		return
+	}
+
+	if len(req.Description) > 500 {
+		http.Error(w, `{"error":"Description too long (max 500 characters)"}`, http.StatusBadRequest)
 		return
 	}
 
 	if err := aiAgent.SkillManager.Create(r.Context(), req.Name, req.Description, req.Content); err != nil {
-		http.Error(w, fmt.Sprintf("Failed to create skill: %v", err), http.StatusInternalServerError)
+		log.Printf("Error creating skill: %v", err)
+		http.Error(w, fmt.Sprintf(`{"error":"Failed to create skill: %s"}`, err.Error()), http.StatusInternalServerError)
 		return
 	}
 
-	response := struct {
-		Message string `json:"message"`
-	}{
-		Message: "Skill created successfully",
+	response := map[string]string{
+		"message": "Skill created successfully",
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -455,25 +650,45 @@ func handleListMemory(w http.ResponseWriter, r *http.Request) {
 
 func handleAddMemory(w http.ResponseWriter, r *http.Request) {
 	var req struct {
-		Type string `json:"type"`
-		Content string `json:"content"`
+		Type     string `json:"type"`
+		Content  string `json:"content"`
 		Metadata string `json:"metadata"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request", http.StatusBadRequest)
+		http.Error(w, `{"error":"Invalid request body"}`, http.StatusBadRequest)
+		return
+	}
+
+	// 输入验证
+	if req.Type == "" || req.Content == "" {
+		http.Error(w, `{"error":"Type and content are required"}`, http.StatusBadRequest)
+		return
+	}
+
+	validTypes := map[string]bool{
+		"snapshot": true,
+		"session":  true,
+		"longterm": true,
+	}
+	if !validTypes[req.Type] {
+		http.Error(w, `{"error":"Invalid memory type. Must be one of: snapshot, session, longterm"}`, http.StatusBadRequest)
+		return
+	}
+
+	if len(req.Content) > 50000 {
+		http.Error(w, `{"error":"Content too long (max 50000 characters)"}`, http.StatusBadRequest)
 		return
 	}
 
 	if err := aiAgent.Memory.Add(r.Context(), req.Type, req.Content, req.Metadata); err != nil {
-		http.Error(w, fmt.Sprintf("Failed to add memory: %v", err), http.StatusInternalServerError)
+		log.Printf("Error adding memory: %v", err)
+		http.Error(w, fmt.Sprintf(`{"error":"Failed to add memory: %s"}`, err.Error()), http.StatusInternalServerError)
 		return
 	}
 
-	response := struct {
-		Message string `json:"message"`
-	}{
-		Message: "Memory added successfully",
+	response := map[string]string{
+		"message": "Memory added successfully",
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -522,11 +737,11 @@ func handleUpdateConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request", http.StatusBadRequest)
+		http.Error(w, `{"error":"Invalid request body"}`, http.StatusBadRequest)
 		return
 	}
 
-	// Update config
+	// Update config with validation
 	if req.Model.Provider != "" {
 		appConfig.Model.Provider = req.Model.Provider
 	}
@@ -539,16 +754,16 @@ func handleUpdateConfig(w http.ResponseWriter, r *http.Request) {
 	if req.Model.BaseURL != "" {
 		appConfig.Model.BaseURL = req.Model.BaseURL
 	}
-	if req.Model.Temperature > 0 {
+	if req.Model.Temperature > 0 && req.Model.Temperature <= 2.0 {
 		appConfig.Model.Temperature = req.Model.Temperature
 	}
-	if req.Model.MaxTokens > 0 {
+	if req.Model.MaxTokens > 0 && req.Model.MaxTokens <= 128000 {
 		appConfig.Model.MaxTokens = req.Model.MaxTokens
 	}
 
 	// Validate config
 	if errs := appConfig.Validate(); len(errs) > 0 {
-		http.Error(w, fmt.Sprintf("Configuration validation failed: %v", errs), http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf(`{"error":"Configuration validation failed: %v"}`, errs), http.StatusBadRequest)
 		return
 	}
 
@@ -556,12 +771,14 @@ func handleUpdateConfig(w http.ResponseWriter, r *http.Request) {
 	configPath := os.ExpandEnv("~/.carrot/config.yaml")
 	dir := filepath.Dir(configPath)
 	if err := os.MkdirAll(dir, 0755); err != nil {
-		http.Error(w, fmt.Sprintf("Failed to create config directory: %v", err), http.StatusInternalServerError)
+		log.Printf("Error creating config directory: %v", err)
+		http.Error(w, `{"error":"Failed to create config directory"}`, http.StatusInternalServerError)
 		return
 	}
 
 	if err := appConfig.Save(configPath); err != nil {
-		http.Error(w, fmt.Sprintf("Failed to save config: %v", err), http.StatusInternalServerError)
+		log.Printf("Error saving config: %v", err)
+		http.Error(w, `{"error":"Failed to save config"}`, http.StatusInternalServerError)
 		return
 	}
 
@@ -569,18 +786,16 @@ func handleUpdateConfig(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
 	agentInstance := initAgent(appConfig, store)
 	if err := agentInstance.Initialize(ctx); err != nil {
-		http.Error(w, fmt.Sprintf("Failed to initialize agent: %v", err), http.StatusInternalServerError)
+		log.Printf("Error initializing agent: %v", err)
+		http.Error(w, fmt.Sprintf(`{"error":"Failed to initialize agent: %s"}`, err.Error()), http.StatusInternalServerError)
 		return
 	}
 
 	aiAgent = agentInstance
 
-	response := struct {
-		Message string `json:"message"`
-		Config *config.Config `json:"config"`
-	}{
-		Message: "Configuration updated successfully",
-		Config: appConfig,
+	response := map[string]interface{}{
+		"message": "Configuration updated successfully",
+		"config":  appConfig,
 	}
 
 	w.Header().Set("Content-Type", "application/json")

@@ -64,16 +64,16 @@ const ConfigPage: React.FC = () => {
       const configResponse = await configService.getConfig()
       const modelsResponse = await configService.getModels()
 
-      const config: Config = configResponse.data
-      setCurrentProvider(config.model.provider)
+      const config: any = configResponse.data
+      setCurrentProvider(config.Model.Provider)
 
       form.setFieldsValue({
-        provider: config.model.provider || 'openai',
-        apiKey: config.model.api_key || '',
-        modelName: config.model.model_name || '',
-        baseUrl: config.model.base_url || '',
-        temperature: config.model.temperature || 0.7,
-        maxTokens: config.model.max_tokens || 4096,
+        provider: config.Model.Provider || 'openai',
+        apiKey: config.Model.APIKey || '',
+        modelName: config.Model.ModelName || '',
+        baseUrl: config.Model.BaseURL || '',
+        temperature: config.Model.Temperature || 0.7,
+        maxTokens: config.Model.MaxTokens || 4096,
       })
 
       setModels(modelsResponse.data || [])
@@ -134,7 +134,7 @@ const ConfigPage: React.FC = () => {
 
       <Card
         title={t('config.modelSettings')}
-        bordered={false}
+        variant="outlined"
         style={{ marginBottom: 24 }}
       >
         <Form

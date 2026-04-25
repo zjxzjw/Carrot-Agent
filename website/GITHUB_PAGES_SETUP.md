@@ -80,12 +80,12 @@ git push origin main
 部署成功后，你的网站将在以下地址可用：
 
 ```
-https://your-org.github.io/carrot-agent/
+https://zjxzjw.github.io/Carrot-Agent/
 ```
 
 中文版本：
 ```
-https://your-org.github.io/carrot-agent/zh/
+https://zjxzjw.github.io/Carrot-Agent/zh/
 ```
 
 ## 🔍 故障排除
@@ -213,7 +213,7 @@ git push origin main
 
 2. **配置 DNS**
    - 在你的域名提供商处添加 CNAME 记录
-   - 指向 `your-org.github.io`
+   - 指向 `zjxzjw.github.io`
 
 3. **提交并推送**
    ```bash
