@@ -8,11 +8,12 @@ import {
   DatabaseOutlined,
   HistoryOutlined,
   BarChartOutlined,
+  SettingOutlined,
   GlobalOutlined
 } from '@ant-design/icons'
 import { useTranslation } from 'react-i18next'
 import i18n from './i18n'
-import { ChatPage, SkillsPage, MemoryPage, SessionsPage, StatsPage } from './pages'
+import { ChatPage, SkillsPage, MemoryPage, SessionsPage, StatsPage, ConfigPage } from './pages'
 import logo from './assets/logo.png'
 
 const { Header, Content, Sider } = Layout
@@ -28,6 +29,7 @@ const App: React.FC = () => {
     { key: 'memory', label: t('menu.memory'), icon: <DatabaseOutlined /> },
     { key: 'sessions', label: t('menu.sessions'), icon: <HistoryOutlined /> },
     { key: 'stats', label: t('menu.stats'), icon: <BarChartOutlined /> },
+    { key: 'config', label: t('menu.config'), icon: <SettingOutlined /> },
   ]
 
   const handleMenuClick = useCallback((e: { key: string }) => {
@@ -52,6 +54,8 @@ const App: React.FC = () => {
         return <SessionsPage />
       case 'stats':
         return <StatsPage />
+      case 'config':
+        return <ConfigPage />
       default:
         return <ChatPage />
     }

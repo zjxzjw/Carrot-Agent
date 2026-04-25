@@ -4,11 +4,12 @@
     "skills": "技能管理",
     "memory": "记忆管理",
     "sessions": "会话管理",
-    "stats": "统计信息"
+    "stats": "统计信息",
+    "config": "配置管理"
   },
   "app": {
     "title": "Carrot Agent",
-    "subtitle": ""
+    "subtitle": "智能代理框架"
   },
   "chat": {
     "placeholder": "输入消息，按 Enter 发送，Shift + Enter 换行...",
@@ -59,6 +60,23 @@
     "snapshot": "快照记忆",
     "session": "会话记忆",
     "longterm": "长期记忆"
+  },
+  "config": {
+    "title": "配置管理",
+    "modelSettings": "模型设置",
+    "provider": "模型提供商",
+    "apiKey": "API Key",
+    "modelName": "模型名称",
+    "baseUrl": "基础URL",
+    "temperature": "温度",
+    "maxTokens": "最大令牌数",
+    "selectProvider": "选择模型提供商",
+    "enterApiKey": "请输入API Key",
+    "selectModel": "选择模型",
+    "enterBaseUrl": "请输入基础URL（可选）",
+    "temperatureRange": "温度必须在0-2之间",
+    "maxTokensRange": "最大令牌数必须在1-128000之间",
+    "updated": "配置更新成功"
   },
   "common": {
     "loading": "加载中...",

@@ -24,6 +24,7 @@ import (
 var (
 	aiAgent *agent.AIAgent
 	store   *storage.Store
+	appConfig *config.Config
 )
 
 func loadConfig() *config.Config {
@@ -117,6 +118,7 @@ func main() {
 	fmt.Printf("Carrot Agent API Server v%s\n", "0.1.0")
 
 	cfg := loadConfig()
+	appConfig = cfg
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -141,6 +143,8 @@ func main() {
 	http.HandleFunc("/api/memory", handleMemory)
 	http.HandleFunc("/api/stats", handleStats)
 	http.HandleFunc("/api/session/", handleSession)
+	http.HandleFunc("/api/config", handleConfig)
+	http.HandleFunc("/api/models", handleModels)
 
 	server := &http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.Server.Port),
@@ -402,4 +406,134 @@ func handleStats(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(stats)
+}
+
+func handleConfig(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		handleGetConfig(w, r)
+	case http.MethodPut:
+		handleUpdateConfig(w, r)
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+func handleGetConfig(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(appConfig)
+}
+
+func handleUpdateConfig(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Model struct {
+			Provider    string  `json:"provider"`
+			APIKey      string  `json:"api_key"`
+			ModelName   string  `json:"model_name"`
+			BaseURL     string  `json:"base_url"`
+			Temperature float64 `json:"temperature"`
+			MaxTokens   int     `json:"max_tokens"`
+		} `json:"model"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request", http.StatusBadRequest)
+		return
+	}
+
+	// Update config
+	if req.Model.Provider != "" {
+		appConfig.Model.Provider = req.Model.Provider
+	}
+	if req.Model.APIKey != "" {
+		appConfig.Model.APIKey = req.Model.APIKey
+	}
+	if req.Model.ModelName != "" {
+		appConfig.Model.ModelName = req.Model.ModelName
+	}
+	if req.Model.BaseURL != "" {
+		appConfig.Model.BaseURL = req.Model.BaseURL
+	}
+	if req.Model.Temperature > 0 {
+		appConfig.Model.Temperature = req.Model.Temperature
+	}
+	if req.Model.MaxTokens > 0 {
+		appConfig.Model.MaxTokens = req.Model.MaxTokens
+	}
+
+	// Validate config
+	if errs := appConfig.Validate(); len(errs) > 0 {
+		http.Error(w, fmt.Sprintf("Configuration validation failed: %v", errs), http.StatusBadRequest)
+		return
+	}
+
+	// Save config to file
+	configPath := os.ExpandEnv("~/.carrot/config.yaml")
+	dir := filepath.Dir(configPath)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		http.Error(w, fmt.Sprintf("Failed to create config directory: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	if err := appConfig.Save(configPath); err != nil {
+		http.Error(w, fmt.Sprintf("Failed to save config: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Restart agent with new config
+	ctx := context.Background()
+	agentInstance := initAgent(appConfig, store)
+	if err := agentInstance.Initialize(ctx); err != nil {
+		http.Error(w, fmt.Sprintf("Failed to initialize agent: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	aiAgent = agentInstance
+
+	response := struct {
+		Message string `json:"message"`
+		Config *config.Config `json:"config"`
+	}{
+		Message: "Configuration updated successfully",
+		Config: appConfig,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
+func handleModels(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	models := []struct {
+		Provider string `json:"provider"`
+		Models []string `json:"models"`
+	}{
+		{
+			Provider: "openai",
+			Models: []string{
+				"gpt-4o",
+				"gpt-4-turbo",
+				"gpt-4",
+				"gpt-3.5-turbo",
+				"gpt-3.5-turbo-16k",
+			},
+		},
+		{
+			Provider: "claude",
+			Models: []string{
+				"claude-3-opus-20240229",
+				"claude-3-sonnet-20240229",
+				"claude-3-haiku-20240307",
+				"claude-2.1",
+				"claude-2",
+			},
+		},
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(models)
 }

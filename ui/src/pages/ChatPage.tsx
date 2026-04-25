@@ -17,39 +17,18 @@ interface MessageItemProps {
 }
 
 const MessageItem = ({ content, role, timestamp }: MessageItemProps) => (
-  <div style={{ 
-    display: 'flex', 
-    alignItems: 'flex-start', 
-    marginBottom: 16,
-    animation: 'fadeIn 0.3s ease-in-out',
-  }}>
-    <div style={{ 
-      width: 40, 
-      height: 40, 
-      borderRadius: '50%', 
-      display: 'flex', 
-      alignItems: 'center', 
-      justifyContent: 'center',
-      marginRight: 12,
-      flexShrink: 0,
-      backgroundColor: role === 'user' ? '#1890ff' : '#f0f0f0',
-      color: role === 'user' ? '#fff' : '#000',
-      fontWeight: 'bold',
-    }}>
+  <div className="chat-message">
+    <div className={`chat-avatar ${role}`}>
       {role === 'user' ? 'U' : 'AI'}
     </div>
-    <div style={{ flex: 1, minWidth: 0 }}>
-      <Text strong style={{ display: 'block', marginBottom: 4 }}>
+    <div className="chat-content">
+      <Text strong className="chat-sender">
         {role === 'user' ? '你' : 'Carrot Agent'}
       </Text>
-      <div style={{ 
-        lineHeight: 1.6, 
-        whiteSpace: 'pre-wrap',
-        wordBreak: 'break-word',
-      }}>
+      <div className="chat-text">
         {content}
       </div>
-      <Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: 4 }}>
+      <Text type="secondary" className="chat-time" style={{ fontSize: 12 }}>
         {new Date(timestamp).toLocaleTimeString()}
       </Text>
     </div>
@@ -101,34 +80,13 @@ const ChatPage: React.FC = () => {
   }
 
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <style>{`
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
-
-      <div style={{ 
-        flex: 1, 
-        overflowY: 'auto', 
-        padding: 16,
-        backgroundColor: '#fafafa',
-        borderRadius: 8,
-        marginBottom: 16,
-      }}>
+    <div className="chat-container">
+      <div className="chat-messages">
         {messages.length === 0 ? (
-          <div style={{ 
-            display: 'flex', 
-            flexDirection: 'column', 
-            alignItems: 'center', 
-            justifyContent: 'center',
-            height: '100%',
-            color: '#999',
-          }}>
-            <img 
-              src={logo} 
-              alt="Carrot Agent Logo" 
+          <div className="chat-empty">
+            <img
+              src={logo}
+              alt="Carrot Agent Logo"
               style={{ width: 64, height: 64, marginBottom: 16 }}
             />
             <Text type="secondary">{t('chat.empty')}</Text>
@@ -136,7 +94,7 @@ const ChatPage: React.FC = () => {
         ) : (
           <>
             {messages.map((item, index) => (
-              <MessageItem 
+              <MessageItem
                 key={`${item.id}-${index}`}
                 content={item.content}
                 role={item.role}
@@ -144,7 +102,7 @@ const ChatPage: React.FC = () => {
               />
             ))}
             {loading && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div className="chat-loading">
                 <Spin size="small" />
                 <Text type="secondary">{t('chat.thinking')}</Text>
               </div>
@@ -154,7 +112,7 @@ const ChatPage: React.FC = () => {
         )}
       </div>
 
-      <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end' }}>
+      <div className="chat-input-area">
         <TextArea
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
@@ -162,19 +120,18 @@ const ChatPage: React.FC = () => {
           placeholder={t('chat.placeholder')}
           autoSize={{ minRows: 2, maxRows: 6 }}
           disabled={loading}
-          style={{ flex: 1 }}
         />
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <Button 
-            type="primary" 
-            icon={<SendOutlined />} 
+        <div className="chat-actions">
+          <Button
+            type="primary"
+            icon={<SendOutlined />}
             onClick={handleSend}
             disabled={inputValue.trim() === '' || loading}
             loading={loading}
           >
             {t('chat.send')}
           </Button>
-          <Button 
+          <Button
             icon={<ClearOutlined />}
             onClick={handleClear}
             disabled={messages.length === 0}

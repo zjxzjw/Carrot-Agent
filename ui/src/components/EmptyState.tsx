@@ -1,5 +1,5 @@
 import { Button } from 'antd'
-import { PlusOutlined } from '@ant-design/icons'
+import { PlusOutlined, InboxOutlined } from '@ant-design/icons'
 
 interface EmptyStateProps {
   title?: string
@@ -8,24 +8,22 @@ interface EmptyStateProps {
   onAction?: () => void
 }
 
-export const EmptyState: React.FC<EmptyStateProps> = ({ 
-  title = '暂无数据', 
+export const EmptyState: React.FC<EmptyStateProps> = ({
+  title = '暂无数据',
   description,
   actionText,
-  onAction 
+  onAction
 }) => {
   return (
-    <div style={{ 
-      display: 'flex', 
-      flexDirection: 'column', 
-      alignItems: 'center', 
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
       justifyContent: 'center',
       padding: '60px 20px',
       textAlign: 'center',
     }}>
-      <div style={{ fontSize: 64, marginBottom: 16, opacity: 0.3 }}>
-        📭
-      </div>
+      <InboxOutlined style={{ fontSize: 64, marginBottom: 16, color: '#d9d9d9' }} />
       <h3 style={{ marginBottom: 8, color: '#333' }}>{title}</h3>
       {description && (
         <p style={{ color: '#999', marginBottom: 24, maxWidth: 300 }}>

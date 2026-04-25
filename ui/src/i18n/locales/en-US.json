@@ -4,7 +4,8 @@
     "skills": "Skills",
     "memory": "Memory",
     "sessions": "Sessions",
-    "stats": "Statistics"
+    "stats": "Statistics",
+    "config": "Configuration"
   },
   "app": {
     "title": "Carrot Agent",
@@ -60,6 +61,23 @@
     "session": "Session Memory",
     "longterm": "Long-term Memory"
   },
+  "config": {
+    "title": "Configuration Management",
+    "modelSettings": "Model Settings",
+    "provider": "Model Provider",
+    "apiKey": "API Key",
+    "modelName": "Model Name",
+    "baseUrl": "Base URL",
+    "temperature": "Temperature",
+    "maxTokens": "Max Tokens",
+    "selectProvider": "Select model provider",
+    "enterApiKey": "Enter API Key",
+    "selectModel": "Select model",
+    "enterBaseUrl": "Enter base URL (optional)",
+    "temperatureRange": "Temperature must be between 0-2",
+    "maxTokensRange": "Max tokens must be between 1-128000",
+    "updated": "Configuration updated successfully"
+  },
   "common": {
     "loading": "Loading...",
     "error": "Operation failed",
@@ -75,6 +93,7 @@
     "search": "Search",
     "filter": "Filter",
     "reset": "Reset",
-    "close": "Close"
+    "close": "Close",
+    "required": "is required"
   }
 }
