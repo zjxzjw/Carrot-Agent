@@ -6,6 +6,10 @@
 
 An intelligent agent framework developed in Go, designed for containerized operation, providing core features such as persistent memory, skill learning, and tool calling.
 
+## 📋 Version
+
+Current Version: 0.1.0
+
 ## 🌟 Core Features
 
 - **Intelligent Agent Functions**: Tool calling, hierarchical memory management, automatic skill learning, cross-session context maintenance
@@ -146,6 +150,65 @@ Refer to the `config.yaml.example` file for detailed configuration parameters.
 | reset     | Reset conversation history |
 | stats     | Display agent statistics   |
 | skills    | List available skills      |
+
+## 📖 Usage Examples
+
+### Basic Conversation
+
+```bash
+$ go run ./cmd/cli
+
+Carrot Agent v0.1.0
+Type 'help' for available commands
+
+> Hello, what can you do?
+I'm Carrot Agent, an intelligent assistant with memory and skill learning capabilities. I can:
+- Execute tool operations
+- Manage hierarchical memory
+- Learn and generate skills
+- Maintain cross-session context
+- Provide system information
+
+How can I assist you today?
+```
+
+### Using Tools
+
+```bash
+> What's the current time?
+{
+  "current_time": "2024-01-01T12:00:00Z",
+  "unix_time": 1704067200
+}
+
+> Read the config file
+{
+  "toolcall": {
+    "thought": "I need to read the config file to see the current configuration",
+    "name": "file_read",
+    "args": {
+      "file_path": "~/.carrot/config.yaml"
+    }
+  }
+}
+```
+
+### Creating Skills
+
+```bash
+> Create a skill for generating daily reports
+{
+  "toolcall": {
+    "thought": "Creating a skill for generating daily reports",
+    "name": "skill_create",
+    "args": {
+      "name": "daily_report",
+      "description": "Generate daily activity report",
+      "content": "# Daily Report Generator\n\nThis skill generates a daily report based on recent activities.\n\n## Usage\n1. Collect activity data\n2. Analyze patterns\n3. Generate summary\n4. Save report to file"
+    }
+  }
+}
+```
 
 ## 📈 Development Roadmap
 
