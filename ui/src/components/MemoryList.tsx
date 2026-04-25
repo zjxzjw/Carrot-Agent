@@ -49,17 +49,24 @@ export function MemoryList({ memories, loading, onAdd }: MemoryListProps) {
     <div className="memory-list-container">
       <Card
         title={
-          <span>
-            <DatabaseOutlined style={{ color: '#1890ff', marginRight: 8 }} />
-            记忆管理
+          <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <DatabaseOutlined 
+              style={{ 
+                color: '#007AFF', 
+                fontSize: 18,
+                filter: 'drop-shadow(0 2px 4px rgba(0, 122, 255, 0.3))'
+              }} 
+            />
+            <span style={{ fontWeight: 600 }}>记忆管理</span>
           </span>
         }
         extra={
           <Select
             placeholder="筛选类型"
-            style={{ width: 120 }}
+            style={{ width: 130, borderRadius: 12 }}
             allowClear
             onChange={() => message.info('筛选功能开发中')}
+            size="middle"
           >
             <Select.Option value="snapshot">快照</Select.Option>
             <Select.Option value="session">会话</Select.Option>

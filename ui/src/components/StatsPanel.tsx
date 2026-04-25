@@ -39,8 +39,12 @@ export function StatsPanel({ stats, loading }: StatsPanelProps) {
             <Statistic
               title="工具调用次数"
               value={stats.tool_call_count}
-              prefix={<ToolOutlined />}
-              valueStyle={{ color: '#1890ff' }}
+              prefix={<ToolOutlined style={{ color: '#007AFF' }} />}
+              valueStyle={{ 
+                color: '#007AFF',
+                fontWeight: 700,
+                letterSpacing: '-2px'
+              }}
             />
           </Card>
         </Col>
@@ -49,8 +53,12 @@ export function StatsPanel({ stats, loading }: StatsPanelProps) {
             <Statistic
               title="技能数量"
               value={stats.skill_count}
-              prefix={<StarOutlined />}
-              valueStyle={{ color: '#faad14' }}
+              prefix={<StarOutlined style={{ color: '#FF9500' }} />}
+              valueStyle={{ 
+                color: '#FF9500',
+                fontWeight: 700,
+                letterSpacing: '-2px'
+              }}
             />
           </Card>
         </Col>
@@ -59,8 +67,12 @@ export function StatsPanel({ stats, loading }: StatsPanelProps) {
             <Statistic
               title="对话长度"
               value={stats.conversation_len}
-              prefix={<MessageOutlined />}
-              valueStyle={{ color: '#52c41a' }}
+              prefix={<MessageOutlined style={{ color: '#34C759' }} />}
+              valueStyle={{ 
+                color: '#34C759',
+                fontWeight: 700,
+                letterSpacing: '-2px'
+              }}
             />
           </Card>
         </Col>
@@ -69,8 +81,12 @@ export function StatsPanel({ stats, loading }: StatsPanelProps) {
             <Statistic
               title="记忆总数"
               value={totalMemory}
-              prefix={<DatabaseOutlined />}
-              valueStyle={{ color: '#722ed1' }}
+              prefix={<DatabaseOutlined style={{ color: '#AF52DE' }} />}
+              valueStyle={{ 
+                color: '#AF52DE',
+                fontWeight: 700,
+                letterSpacing: '-2px'
+              }}
             />
           </Card>
         </Col>
@@ -94,11 +110,14 @@ export function StatsPanel({ stats, loading }: StatsPanelProps) {
                     </div>
                     <Progress
                       percent={totalMemory > 0 ? (count / totalMemory) * 100 : 0}
-                      strokeColor={
-                        type === 'snapshot' ? '#1890ff' :
-                        type === 'session' ? '#52c41a' : '#722ed1'
-                      }
+                      strokeColor={{
+                        '0%': type === 'snapshot' ? '#007AFF' :
+                              type === 'session' ? '#34C759' : '#AF52DE',
+                        '100%': type === 'snapshot' ? '#5856D6' :
+                                type === 'session' ? '#30D158' : '#BF5AF2'
+                      }}
                       showInfo={false}
+                      strokeWidth={8}
                     />
                   </div>
                 ))}

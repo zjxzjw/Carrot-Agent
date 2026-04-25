@@ -43,13 +43,25 @@ export function SkillList({ skills, loading, onCreate }: SkillListProps) {
     <div className="skill-list-container">
       <Card
         title={
-          <span>
-            <ThunderboltOutlined style={{ color: '#faad14', marginRight: 8 }} />
-            技能列表
+          <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <ThunderboltOutlined 
+              style={{ 
+                color: '#FF9500', 
+                fontSize: 18,
+                filter: 'drop-shadow(0 2px 4px rgba(255, 149, 0, 0.3))'
+              }} 
+            />
+            <span style={{ fontWeight: 600 }}>技能列表</span>
           </span>
         }
         extra={
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => setModalVisible(true)}>
+          <Button 
+            type="primary" 
+            icon={<PlusOutlined />} 
+            onClick={() => setModalVisible(true)}
+            shape="round"
+            size="middle"
+          >
             创建技能
           </Button>
         }

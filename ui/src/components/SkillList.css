@@ -3,16 +3,20 @@
 }
 
 .skill-item {
-  padding: 16px 0;
-  transition: background-color 0.2s ease;
-  border-radius: var(--apple-radius-md);
-  margin: 0 -20px;
-  padding-left: 20px;
-  padding-right: 20px;
+  padding: var(--apple-space-4) var(--apple-space-5);
+  transition: all var(--apple-transition-base);
+  border-radius: var(--apple-radius-lg);
+  margin: var(--apple-space-2) calc(var(--apple-space-4) * -1);
+  background: transparent;
+  border: 1px solid transparent;
 }
 
 .skill-item:hover {
-  background-color: var(--apple-gray-6);
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  transform: translateX(4px);
+  border-color: rgba(0, 122, 255, 0.1);
+  box-shadow: var(--apple-shadow-sm);
 }
 
 .skill-title {
@@ -25,6 +29,16 @@
   font-size: 16px;
   font-weight: 600;
   color: var(--apple-text-primary);
+  letter-spacing: -0.3px;
+}
+
+.skill-title .ant-tag {
+  border-radius: var(--apple-radius-full);
+  font-weight: 600;
+  padding: 2px 10px;
+  background: linear-gradient(135deg, var(--apple-blue-ultra-light) 0%, rgba(175, 82, 222, 0.1) 100%);
+  border: none;
+  color: var(--apple-blue);
 }
 
 .skill-description {
@@ -42,27 +56,37 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 4px;
+  margin-top: var(--apple-space-2);
 }
 
 .skill-date {
   font-size: 12px;
-  color: var(--apple-text-tertiary);
+  color: var(--apple-text-quaternary);
+  font-weight: 500;
 }
 
 .skill-platforms {
   display: flex;
-  gap: 6px;
+  gap: var(--apple-space-2);
   flex-wrap: wrap;
 }
 
 .platform-tag {
-  font-size: 12px;
-  padding: 2px 8px;
+  font-size: 11px;
+  padding: 3px 10px;
   margin: 0;
-  background: var(--apple-gray-6);
+  background: linear-gradient(135deg, var(--apple-gray-6) 0%, rgba(255, 255, 255, 0.8) 100%);
   color: var(--apple-text-secondary);
-  border-radius: var(--apple-radius-sm);
+  border-radius: var(--apple-radius-full);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  font-weight: 500;
+  transition: all var(--apple-transition-fast);
+}
+
+.platform-tag:hover {
+  background: var(--apple-bg-primary);
+  transform: scale(1.05);
+  box-shadow: var(--apple-shadow-xs);
 }
 
 .skill-list-container .ant-list-pagination {

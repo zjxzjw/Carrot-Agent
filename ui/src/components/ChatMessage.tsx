@@ -12,9 +12,21 @@ interface ChatMessageProps {
 export function ChatMessage({ message }: ChatMessageProps) {
   const isUser = message.role === 'user'
   const avatar = isUser ? (
-    <Avatar icon={<UserOutlined />} style={{ backgroundColor: '#007AFF' }} />
+    <Avatar 
+      icon={<UserOutlined />} 
+      style={{ 
+        background: 'linear-gradient(135deg, #007AFF 0%, #5856D6 100%)',
+        boxShadow: '0 4px 12px rgba(0, 122, 255, 0.3)'
+      }} 
+    />
   ) : (
-    <Avatar icon={<RobotOutlined />} style={{ backgroundColor: '#34C759' }} />
+    <Avatar 
+      icon={<RobotOutlined />} 
+      style={{ 
+        background: 'linear-gradient(135deg, #34C759 0%, #30D158 100%)',
+        boxShadow: '0 4px 12px rgba(52, 199, 89, 0.3)'
+      }} 
+    />
   )
 
   const formatTime = (date: Date) => {

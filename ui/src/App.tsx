@@ -80,14 +80,23 @@ function App() {
     <Layout style={{ minHeight: '100vh' }} className="app-layout">
       <Header className="app-header">
         <div className="header-left">
-            <Title level={3} style={{ margin: 0, color: '#1D1D1F', fontWeight: 600 }}>Carrot Agent</Title>
+            <Title level={3} style={{ margin: 0, fontWeight: 700 }}>Carrot Agent</Title>
             <ConnectionStatus connected={state.connected} />
           </div>
-        <Space>
+        <Space size="middle">
           <Tooltip title="刷新连接状态">
-            <Button icon={<SyncOutlined spin={!state.connected} />} onClick={() => checkConnection(dispatch)} />
+            <Button 
+              icon={<SyncOutlined spin={!state.connected} />} 
+              onClick={() => checkConnection(dispatch)}
+              shape="circle"
+            />
           </Tooltip>
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => addConversation(dispatch)}>
+          <Button 
+            type="primary" 
+            icon={<PlusOutlined />} 
+            onClick={() => addConversation(dispatch)}
+            size="large"
+          >
             新建对话
           </Button>
         </Space>
@@ -145,6 +154,7 @@ function App() {
                     placeholder="输入消息... (Enter 发送, Shift+Enter 换行)"
                     autoSize={{ minRows: 1, maxRows: 4 }}
                     disabled={state.loading}
+                    bordered={false}
                   />
                   <Button
                     type="primary"
@@ -152,6 +162,8 @@ function App() {
                     onClick={handleSendMessage}
                     loading={state.loading}
                     disabled={!messageInput?.trim()}
+                    size="large"
+                    shape="round"
                   >
                     发送
                   </Button>
