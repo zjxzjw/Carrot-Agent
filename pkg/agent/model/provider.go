@@ -60,6 +60,11 @@ type Usage struct {
 }
 
 type ToolDefinition struct {
+	Type     string          `json:"type"`
+	Function ToolFunctionDef `json:"function"`
+}
+
+type ToolFunctionDef struct {
 	Name        string         `json:"name"`
 	Description string         `json:"description"`
 	Parameters  ToolParameters `json:"parameters"`

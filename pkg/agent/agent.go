@@ -408,14 +408,15 @@ func (a *AIAgent) RunConversation(ctx context.Context, userInput string) (*model
 		req.Tools = make([]model.ToolDefinition, len(tools))
 		for i, t := range tools {
 			if fn, ok := t["function"].(map[string]interface{}); ok {
-				toolDef := model.ToolDefinition{
+				functionDef := model.ToolFunctionDef{
 					Name:        getString(fn, "name"),
 					Description: getString(fn, "description"),
 				}
+				// Always set parameters, even if not present
+				properties := make(map[string]model.Property)
+				required := []string{}
+				
 				if params, ok := fn["parameters"].(map[string]interface{}); ok {
-					properties := make(map[string]model.Property)
-					var required []string
-					
 					if props, ok := params["properties"].(map[string]interface{}); ok {
 						for name, prop := range props {
 							if propMap, ok := prop.(map[string]interface{}); ok {
@@ -434,12 +435,16 @@ func (a *AIAgent) RunConversation(ctx context.Context, userInput string) (*model
 							}
 						}
 					}
-					
-					toolDef.Parameters = model.ToolParameters{
-						Type:       "object",
-						Properties: properties,
-						Required:   required,
-					}
+				}
+				
+				functionDef.Parameters = model.ToolParameters{
+					Type:       "object",
+					Properties: properties,
+					Required:   required,
+				}
+				toolDef := model.ToolDefinition{
+					Type:     "function",
+					Function: functionDef,
 				}
 				req.Tools[i] = toolDef
 			}

@@ -8,6 +8,7 @@ vendor/
 *.so
 *.dylib
 carrot-agent
+*.env
 
 # Build output
 bin/

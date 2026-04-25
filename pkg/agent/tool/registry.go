@@ -134,10 +134,11 @@ func ConvertToModelTools(registry *ToolRegistry) []map[string]interface{} {
 			},
 		}
 
-		if len(def.Parameters) > 0 {
-			properties := make(map[string]interface{})
-			required := []string{}
+		// Always add parameters field, even for tools with no parameters
+		properties := make(map[string]interface{})
+		required := []string{}
 
+		if len(def.Parameters) > 0 {
 			for paramName, paramDef := range def.Parameters {
 				paramMap, ok := paramDef.(map[string]interface{})
 				if !ok {
@@ -156,16 +157,14 @@ func ConvertToModelTools(registry *ToolRegistry) []map[string]interface{} {
 					required = append(required, paramName)
 				}
 			}
-
-			tool["function"].(map[string]interface{})["parameters"] = map[string]interface{}{
-				"type":       "object",
-				"properties": properties,
-			}
-
-			if len(required) > 0 {
-				tool["function"].(map[string]interface{})["parameters"].(map[string]interface{})["required"] = required
-			}
 		}
+
+		parameters := map[string]interface{}{
+			"type":       "object",
+			"properties": properties,
+			"required":   required,
+		}
+		tool["function"].(map[string]interface{})["parameters"] = parameters
 
 		tools = append(tools, tool)
 	}
