@@ -11,6 +11,7 @@ services:
       - CARROT_MODEL_NAME=${CARROT_MODEL_NAME:-gpt-4}
       - CARROT_API_KEY=${CARROT_API_KEY}
       - CARROT_BASE_URL=${CARROT_BASE_URL:-https://api.openai.com/v1}
+      - CARROT_ALLOWED_PATHS=${CARROT_ALLOWED_PATHS:-/home/carrot/.carrot,/tmp}
     volumes:
       - carrot-data:/home/carrot/.carrot
     ports:

@@ -39,7 +39,7 @@ func buildToolParams(properties map[string]interface{}, required []string) map[s
 }
 
 var (
-	allowedPaths    = []string{"~/.carrot", "/tmp"}
+	allowedPaths    []string
 	blockListRegex  = regexp.MustCompile(`(?i)(proc|sys|etc/passwd|etc/shadow|\.ssh|\.aws|\.git/config)`)
 	privateIPRanges = []*net.IPNet{
 		parseCIDR("10.0.0.0/8"),
@@ -49,6 +49,23 @@ var (
 		parseCIDR("169.254.0.0/16"),
 	}
 )
+
+func init() {
+	// Initialize allowed paths from environment variable or use defaults
+	if envPaths := os.Getenv("CARROT_ALLOWED_PATHS"); envPaths != "" {
+		// Split by comma and trim spaces
+		paths := strings.Split(envPaths, ",")
+		for _, p := range paths {
+			p = strings.TrimSpace(p)
+			if p != "" {
+				allowedPaths = append(allowedPaths, p)
+			}
+		}
+	} else {
+		// Default allowed paths
+		allowedPaths = []string{"~/.carrot", "/tmp"}
+	}
+}
 
 func parseCIDR(cidr string) *net.IPNet {
 	_, ipNet, _ := net.ParseCIDR(cidr)
