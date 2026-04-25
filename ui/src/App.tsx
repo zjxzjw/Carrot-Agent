@@ -1,199 +1,148 @@
-import { useEffect, useRef, useState, useReducer } from 'react'
-import { Layout, Menu, Button, Input, Tabs, Typography, Alert, Tooltip, Space } from 'antd'
-import { MessageOutlined, SettingOutlined, PlusOutlined, SendOutlined, SyncOutlined } from '@ant-design/icons'
+import { useState, useCallback } from 'react'
+import { Layout, Menu, ConfigProvider, Select, Spin } from 'antd'
+import zhCN from 'antd/locale/zh_CN'
+import enUS from 'antd/locale/en_US'
 import {
-  initialState, 
-  agentReducer,
-  checkConnection,
-  sendMessage,
-  fetchSkills,
-  fetchMemories,
-  fetchStats,
-  createSkill,
-  addMemory,
-  selectConversation,
-  addConversation,
-  clearError,
-  getSortedMemories,
-  getSortedSkills
-} from './store'
-import { ChatList, ConnectionStatus } from './components/ChatMessage'
-import { SkillList } from './components/SkillList'
-import { MemoryList } from './components/MemoryList'
-import { StatsPanel } from './components/StatsPanel'
-import './App.css'
+  MessageOutlined,
+  ToolOutlined,
+  DatabaseOutlined,
+  HistoryOutlined,
+  BarChartOutlined,
+  GlobalOutlined
+} from '@ant-design/icons'
+import { useTranslation } from 'react-i18next'
+import i18n from './i18n'
+import { ChatPage, SkillsPage, MemoryPage, SessionsPage, StatsPage } from './pages'
+import logo from './assets/logo.png'
 
 const { Header, Content, Sider } = Layout
-const { Title } = Typography
-const { Search, TextArea } = Input
-const { TabPane } = Tabs
 
-function App() {
-  const [state, dispatch] = useReducer(agentReducer, initialState)
-  const [messageInput, setMessageInput] = useState('')
-  const chatListRef = useRef<HTMLDivElement>(null)
+const App: React.FC = () => {
+  const [current, setCurrent] = useState('chat')
+  const [loading, setLoading] = useState(false)
+  const { t, i18n: i18nInstance } = useTranslation()
 
-  useEffect(() => {
-    checkConnection(dispatch)
-    const interval = setInterval(() => checkConnection(dispatch), 30000)
-    return () => clearInterval(interval)
+  const items = [
+    { key: 'chat', label: t('menu.chat'), icon: <MessageOutlined /> },
+    { key: 'skills', label: t('menu.skills'), icon: <ToolOutlined /> },
+    { key: 'memory', label: t('menu.memory'), icon: <DatabaseOutlined /> },
+    { key: 'sessions', label: t('menu.sessions'), icon: <HistoryOutlined /> },
+    { key: 'stats', label: t('menu.stats'), icon: <BarChartOutlined /> },
+  ]
+
+  const handleMenuClick = useCallback((e: { key: string }) => {
+    setCurrent(e.key)
   }, [])
 
-  useEffect(() => {
-    if (chatListRef.current) {
-      chatListRef.current.scrollTop = chatListRef.current.scrollHeight
-    }
-  }, [state.messages])
+  const handleLanguageChange = useCallback((value: string) => {
+    setLoading(true)
+    i18nInstance.changeLanguage(value)
+      .finally(() => setLoading(false))
+  }, [i18nInstance])
 
-  const handleSendMessage = () => {
-    if (messageInput.trim()) {
-      sendMessage(dispatch, messageInput, state.currentConversationId)
-      setMessageInput('')
-    }
-  }
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      handleSendMessage()
-    }
-  }
-
-  const handleTabChange = async (key: string) => {
-    switch (key) {
+  const renderContent = () => {
+    switch (current) {
+      case 'chat':
+        return <ChatPage />
       case 'skills':
-        await fetchSkills(dispatch)
-        break
+        return <SkillsPage />
       case 'memory':
-        await fetchMemories(dispatch)
-        break
+        return <MemoryPage />
+      case 'sessions':
+        return <SessionsPage />
       case 'stats':
-        await fetchStats(dispatch)
-        break
+        return <StatsPage />
+      default:
+        return <ChatPage />
     }
   }
 
-  const sortedSkills = getSortedSkills(state)
-  const sortedMemories = getSortedMemories(state)
+  const getAntdLocale = () => {
+    return i18n.language === 'zh-CN' ? zhCN : enUS
+  }
 
   return (
-    <Layout style={{ minHeight: '100vh' }} className="app-layout">
-      <Header className="app-header">
-        <div className="header-left">
-            <Title level={3} style={{ margin: 0, fontWeight: 700 }}>Carrot Agent</Title>
-            <ConnectionStatus connected={state.connected} />
-          </div>
-        <Space size="middle">
-          <Tooltip title="刷新连接状态">
-            <Button 
-              icon={<SyncOutlined spin={!state.connected} />} 
-              onClick={() => checkConnection(dispatch)}
-              shape="circle"
-            />
-          </Tooltip>
-          <Button 
-            type="primary" 
-            icon={<PlusOutlined />} 
-            onClick={() => addConversation(dispatch)}
-            size="large"
+    <ConfigProvider locale={getAntdLocale()}>
+      <Layout style={{ minHeight: '100vh' }}>
+        <Sider 
+          theme="light" 
+          width={220} 
+          style={{ 
+            borderRight: '1px solid #f0f0f0',
+            boxShadow: '2px 0 8px rgba(0,0,0,0.05)',
+          }}
+        >
+          <div 
+            style={{ 
+              height: 72, 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              borderBottom: '1px solid #f0f0f0',
+            }}
           >
-            新建对话
-          </Button>
-        </Space>
-      </Header>
-
-      <Layout className="app-body">
-        <Sider width={280} className="app-sider" collapsible>
-          <div className="sider-search">
-            <Search placeholder="搜索对话..." allowClear />
+            <img 
+              src={logo} 
+              alt="Carrot Agent Logo" 
+              style={{ width: 32, height: 32, marginRight: 12 }}
+            />
+            <div>
+              <div style={{ fontSize: 18, fontWeight: 'bold', color: '#333' }}>Carrot Agent</div>
+              <div style={{ fontSize: 12, color: '#999' }}>{t('app.subtitle')}</div>
+            </div>
           </div>
           <Menu
             mode="inline"
-            selectedKeys={[state.currentConversationId]}
-            onClick={({ key }) => selectConversation(dispatch, key)}
-            className="conversation-menu"
-            items={state.conversations.map((conv) => ({
-              key: conv.id,
-              icon: <MessageOutlined />,
-              label: conv.title
-            }))}
+            selectedKeys={[current]}
+            onClick={handleMenuClick}
+            items={items}
+            style={{ height: 'calc(100% - 72px)', borderRight: 0 }}
           />
         </Sider>
-
-        <Content className="app-content">
-          <Tabs
-            defaultActiveKey="chat"
-            onChange={handleTabChange}
-            className="main-tabs"
-            tabBarExtraContent={
-              <Button type="text" icon={<SettingOutlined />}>设置</Button>
-            }
+        <Layout>
+          <Header 
+            style={{ 
+              padding: '0 24px', 
+              background: '#fff',
+              borderBottom: '1px solid #f0f0f0',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
           >
-            <TabPane tab="对话" key="chat">
-              <div className="chat-container">
-                <div className="chat-messages" ref={chatListRef}>
-                  <ChatList messages={state.messages} />
-                </div>
-
-                {state.error && (
-                  <Alert
-                    message={state.error}
-                    type="error"
-                    showIcon
-                    closable
-                    onClose={() => clearError(dispatch)}
-                    style={{ marginBottom: 16 }}
-                  />
-                )}
-
-                <div className="chat-input-area">
-                  <TextArea
-                    value={messageInput}
-                    onChange={(e) => setMessageInput(e.target.value)}
-                    onKeyDown={handleKeyPress}
-                    placeholder="输入消息... (Enter 发送, Shift+Enter 换行)"
-                    autoSize={{ minRows: 1, maxRows: 4 }}
-                    disabled={state.loading}
-                    bordered={false}
-                  />
-                  <Button
-                    type="primary"
-                    icon={<SendOutlined />}
-                    onClick={handleSendMessage}
-                    loading={state.loading}
-                    disabled={!messageInput?.trim()}
-                    size="large"
-                    shape="round"
-                  >
-                    发送
-                  </Button>
-                </div>
-              </div>
-            </TabPane>
-
-            <TabPane tab="技能" key="skills">
-              <SkillList
-                skills={sortedSkills}
-                loading={state.loading}
-                onCreate={(name, description, content) => createSkill(dispatch, name, description, content)}
+            <span style={{ fontSize: 14, color: '#666' }}>
+              {t(`menu.${current}`)}
+            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <GlobalOutlined style={{ color: '#666' }} />
+              <Select
+                value={i18n.language}
+                onChange={handleLanguageChange}
+                options={[
+                  { value: 'zh-CN', label: '中文' },
+                  { value: 'en-US', label: 'English' },
+                ]}
+                style={{ width: 120 }}
+                disabled={loading}
               />
-            </TabPane>
-
-            <TabPane tab="记忆" key="memory">
-              <MemoryList
-                memories={sortedMemories}
-                loading={state.loading}
-                onAdd={(type, content, metadata) => addMemory(dispatch, type, content, metadata)}
-              />
-            </TabPane>
-
-            <TabPane tab="统计" key="stats">
-              <StatsPanel stats={state.stats} loading={state.loading} />
-            </TabPane>
-          </Tabs>
-        </Content>
+              {loading && <Spin size="small" />}
+            </div>
+          </Header>
+          <Content 
+            style={{ 
+              margin: 24, 
+              padding: 24, 
+              background: '#fff', 
+              minHeight: 280,
+              borderRadius: 8,
+              boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+            }}
+          >
+            {renderContent()}
+          </Content>
+        </Layout>
       </Layout>
-    </Layout>
+    </ConfigProvider>
   )
 }
 

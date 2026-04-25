@@ -1,0 +1,80 @@
+{
+  "menu": {
+    "chat": "Chat",
+    "skills": "Skills",
+    "memory": "Memory",
+    "sessions": "Sessions",
+    "stats": "Statistics"
+  },
+  "app": {
+    "title": "Carrot Agent",
+    "subtitle": "Intelligent Agent Framework"
+  },
+  "chat": {
+    "placeholder": "Type a message, press Enter to send, Shift + Enter to newline...",
+    "send": "Send",
+    "clear": "Clear",
+    "empty": "Start a conversation with Carrot Agent",
+    "thinking": "Agent is thinking..."
+  },
+  "skills": {
+    "title": "Skills Management",
+    "create": "Create Skill",
+    "name": "Skill Name",
+    "description": "Skill Description",
+    "content": "Skill Content",
+    "empty": "No skills yet",
+    "emptyDesc": "Create your first skill to help Agent learn new abilities",
+    "success": "Skill created successfully",
+    "filter": "Filter Platform"
+  },
+  "memory": {
+    "title": "Memory Management",
+    "add": "Add Memory",
+    "type": "Memory Type",
+    "content": "Memory Content",
+    "metadata": "Metadata (Optional)",
+    "empty": "No memories yet",
+    "emptyDesc": "Add memories for Agent to better understand and respond to you",
+    "success": "Memory added successfully"
+  },
+  "sessions": {
+    "title": "Sessions Management",
+    "delete": "Delete",
+    "refresh": "Refresh",
+    "empty": "No sessions yet",
+    "emptyDesc": "Start a new conversation",
+    "confirmDelete": "Are you sure to delete this session?",
+    "deleteDesc": "Cannot be recovered after deletion",
+    "success": "Session deleted successfully"
+  },
+  "stats": {
+    "title": "Statistics",
+    "refresh": "Refresh Data",
+    "toolCalls": "Tool Calls",
+    "skillCount": "Skill Count",
+    "conversationLen": "Conversation Length",
+    "totalMemories": "Total Memories",
+    "memoryDistribution": "Memory Distribution",
+    "snapshot": "Snapshot Memory",
+    "session": "Session Memory",
+    "longterm": "Long-term Memory"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Operation failed",
+    "success": "Operation successful",
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "save": "Save",
+    "create": "Create",
+    "delete": "Delete",
+    "edit": "Edit",
+    "view": "View",
+    "refresh": "Refresh",
+    "search": "Search",
+    "filter": "Filter",
+    "reset": "Reset",
+    "close": "Close"
+  }
+}

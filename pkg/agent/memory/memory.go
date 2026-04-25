@@ -127,12 +127,24 @@ func (m *MemoryManager) GetSnapshotContent() string {
 		return ""
 	}
 
+	sortSnapshotsByCreatedAt(snapshots)
+
 	content := ""
 	for _, snap := range snapshots {
 		content += snap.Content + "\n\n"
 	}
 
 	return content
+}
+
+func sortSnapshotsByCreatedAt(snapshots []*storage.Memory) {
+	for i := 0; i < len(snapshots)-1; i++ {
+		for j := i + 1; j < len(snapshots); j++ {
+			if snapshots[i].CreatedAt.Before(snapshots[j].CreatedAt) {
+				snapshots[i], snapshots[j] = snapshots[j], snapshots[i]
+			}
+		}
+	}
 }
 
 func (m *MemoryManager) GetLongTermMemories(limit int) ([]*storage.Memory, error) {

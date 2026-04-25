@@ -1,13 +1,15 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import { ConfigProvider } from 'antd'
+import { Provider } from 'react-redux'
 import App from './App.tsx'
+import { store } from './store'
+import './i18n'
 import './index.css'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <ConfigProvider>
+    <Provider store={store}>
       <App />
-    </ConfigProvider>
+    </Provider>
   </React.StrictMode>,
 )

@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 
@@ -19,12 +21,35 @@ import (
 	"carrotagent/carrot-agent/pkg/storage"
 )
 
-var aiAgent *agent.AIAgent
+var (
+	aiAgent *agent.AIAgent
+	store   *storage.Store
+)
 
-func main() {
-	// 加载配置
+func loadConfig() *config.Config {
+	configPaths := []string{
+		"~/.carrot/config.yaml",
+		"./config.yaml",
+		"/etc/carrot/config.yaml",
+	}
+
+	for _, path := range configPaths {
+		expandedPath := os.ExpandEnv(path)
+		if _, err := os.Stat(expandedPath); err == nil {
+			cfg, err := config.Load(expandedPath)
+			if err == nil {
+				applyEnvOverrides(cfg)
+				return cfg
+			}
+		}
+	}
+
 	cfg := config.Default()
-	// 从环境变量覆盖配置
+	applyEnvOverrides(cfg)
+	return cfg
+}
+
+func applyEnvOverrides(cfg *config.Config) {
 	if apiKey := os.Getenv("CARROT_API_KEY"); apiKey != "" {
 		cfg.Model.APIKey = apiKey
 	}
@@ -34,84 +59,186 @@ func main() {
 	if baseURL := os.Getenv("CARROT_BASE_URL"); baseURL != "" {
 		cfg.Model.BaseURL = baseURL
 	}
+	if provider := os.Getenv("CARROT_MODEL_PROVIDER"); provider != "" {
+		cfg.Model.Provider = provider
+	}
+}
 
-	// 初始化存储
-	store, err := storage.NewStore(cfg.Agent.DataDir)
+func initStorage(cfg *config.Config) (*storage.Store, error) {
+	dbPath := os.ExpandEnv(cfg.Storage.DBPath)
+	dir := filepath.Dir(dbPath)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return nil, fmt.Errorf("failed to create data directory: %w", err)
+	}
+
+	return storage.NewStore(dbPath)
+}
+
+func initAgent(cfg *config.Config, store *storage.Store) *agent.AIAgent {
+	skillMgr := skill.NewSkillManager(store)
+	memMgr := memory.NewMemoryManager(store)
+
+	agentCfg := &agent.AgentConfig{
+		Name:          cfg.Agent.Name,
+		Version:       cfg.Agent.Version,
+		DataDir:       cfg.Agent.DataDir,
+		ModelProvider:  cfg.Model.Provider,
+		ModelName:     cfg.Model.ModelName,
+		Temperature:   cfg.Model.Temperature,
+		MaxTokens:     cfg.Model.MaxTokens,
+		EnableSkills:  true,
+		EnableMemory:  true,
+		SkillNudgeInt: cfg.Agent.SkillNudgeInt,
+	}
+
+	var modelProvider model.Provider
+	if cfg.Model.APIKey != "" {
+		modelProvider = model.NewProviderFactory().CreateProvider(
+			cfg.Model.Provider,
+			cfg.Model.APIKey,
+			cfg.Model.BaseURL,
+			cfg.Model.ModelName,
+		)
+	}
+
+	agentOpts := []agent.AgentOption{
+		agent.WithSkillManager(skillMgr),
+		agent.WithMemoryManager(memMgr),
+	}
+
+	if modelProvider != nil {
+		agentOpts = append(agentOpts, agent.WithModelProvider(modelProvider))
+	}
+
+	return agent.NewAIAgent(agentCfg, store, agentOpts...)
+}
+
+func main() {
+	fmt.Printf("Carrot Agent API Server v%s\n", "0.1.0")
+
+	cfg := loadConfig()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	var err error
+	store, err = initStorage(cfg)
 	if err != nil {
 		log.Fatalf("Failed to create store: %v", err)
 	}
+	defer store.Close()
 
-	// 初始化内存管理器
-	memoryManager := memory.NewMemoryManager(store)
-
-	// 初始化技能管理器
-	skillManager := skill.NewSkillManager(store)
-
-	// 初始化模型提供者
-	provider := model.NewOpenAIProvider(
-		cfg.Model.APIKey,
-		cfg.Model.BaseURL,
-		cfg.Model.ModelName,
-	)
-
-	// 初始化代理
-	aiAgent = agent.NewAIAgent(
-		&agent.AgentConfig{
-			Name:           "carrot-agent",
-			Version:        "0.1.0",
-			DataDir:        cfg.Agent.DataDir,
-			ModelProvider:  cfg.Model.Provider,
-			ModelName:      cfg.Model.ModelName,
-			Temperature:    cfg.Model.Temperature,
-			MaxTokens:      cfg.Model.MaxTokens,
-			EnableSkills:   true,
-			EnableMemory:   true,
-			SkillNudgeInt:  cfg.Agent.SkillNudgeInt,
-		},
-		store,
-		agent.WithMemoryManager(memoryManager),
-		agent.WithSkillManager(skillManager),
-		agent.WithModelProvider(provider),
-	)
-
-	// 初始化代理
-	if err := aiAgent.Initialize(context.Background()); err != nil {
+	agentInstance := initAgent(cfg, store)
+	if err := agentInstance.Initialize(ctx); err != nil {
 		log.Fatalf("Failed to initialize agent: %v", err)
 	}
 
-	// 设置路由
+	aiAgent = agentInstance
+
+	http.HandleFunc("/health", handleHealth)
 	http.HandleFunc("/api/chat", handleChat)
 	http.HandleFunc("/api/skills", handleSkills)
 	http.HandleFunc("/api/memory", handleMemory)
 	http.HandleFunc("/api/stats", handleStats)
+	http.HandleFunc("/api/session/", handleSession)
 
-	// 启动服务器
 	server := &http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.Server.Port),
 		Handler: nil,
 	}
 
-	// 优雅关闭
 	go func() {
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("Failed to start server: %v", err)
 		}
 	}()
 
-	// 等待中断信号
+	log.Printf("Server started on port %d", cfg.Server.Port)
+
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 
-	// 关闭服务器
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+	log.Println("Shutting down server...")
 
-	if err := server.Shutdown(ctx); err != nil {
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer shutdownCancel()
+
+	if err := server.Shutdown(shutdownCtx); err != nil {
 		log.Fatalf("Server shutdown failed: %v", err)
 	}
 
 	log.Println("Server exited")
+}
+
+func handleHealth(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+}
+
+func handleSession(w http.ResponseWriter, r *http.Request) {
+	path := r.URL.Path
+	sessionID := strings.TrimPrefix(path, "/api/session/")
+
+	if sessionID == "" {
+		switch r.Method {
+		case http.MethodGet:
+			handleListSessions(w, r)
+		default:
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+		return
+	}
+
+	switch r.Method {
+	case http.MethodGet:
+		handleGetSession(w, r, sessionID)
+	case http.MethodDelete:
+		handleDeleteSession(w, r, sessionID)
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+func handleListSessions(w http.ResponseWriter, r *http.Request) {
+	sessions, err := store.ListSessions("default", 100)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to list sessions: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{"sessions": sessions, "count": len(sessions)})
+}
+
+func handleGetSession(w http.ResponseWriter, r *http.Request, sessionID string) {
+	session, err := store.GetSession(sessionID)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to get session: %v", err), http.StatusInternalServerError)
+		return
+	}
+	if session == nil {
+		http.Error(w, "Session not found", http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(session)
+}
+
+func handleDeleteSession(w http.ResponseWriter, r *http.Request, sessionID string) {
+	if err := store.DeleteSession(sessionID); err != nil {
+		http.Error(w, fmt.Sprintf("Failed to delete session: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"message": "Session deleted successfully"})
 }
 
 func handleChat(w http.ResponseWriter, r *http.Request) {

@@ -204,11 +204,28 @@ func (m *SkillManager) GetSkillsIndex() string {
 	var index []string
 	index = append(index, "# Skills Index\n")
 
+	skills := make([]*storage.Skill, 0, len(m.skills))
 	for _, skill := range m.skills {
+		skills = append(skills, skill)
+	}
+
+	sortSkillsByUpdatedAt(skills)
+
+	for _, skill := range skills {
 		index = append(index, fmt.Sprintf("## %s\n%s\n", skill.Name, skill.Description))
 	}
 
 	return strings.Join(index, "\n")
+}
+
+func sortSkillsByUpdatedAt(skills []*storage.Skill) {
+	for i := 0; i < len(skills)-1; i++ {
+		for j := i + 1; j < len(skills); j++ {
+			if skills[i].UpdatedAt.Before(skills[j].UpdatedAt) {
+				skills[i], skills[j] = skills[j], skills[i]
+			}
+		}
+	}
 }
 
 func (m *SkillManager) GetSkillCount() int {

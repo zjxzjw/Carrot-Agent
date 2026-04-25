@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 )
 
 type Tool func(ctx context.Context, args map[string]interface{}) (interface{}, error)
@@ -117,7 +118,7 @@ func (r *ToolRegistry) GetToolsForPrompt() string {
 		lines = append(lines, "")
 	}
 
-	return fmt.Sprintf("%s", lines)
+	return strings.Join(lines, "")
 }
 
 func ConvertToModelTools(registry *ToolRegistry) []map[string]interface{} {

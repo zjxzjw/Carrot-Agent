@@ -179,16 +179,68 @@ func interactiveLoop(ctx context.Context, ag *agent.AIAgent, scanner *bufio.Scan
 			continue
 		}
 
-		resp, err := ag.RunConversation(ctx, input)
-		if err != nil {
+		if err := handleConversationTurn(ctx, ag, input); err != nil {
 			fmt.Printf("Error: %v\n", err)
+		}
+	}
+}
+
+func handleConversationTurn(ctx context.Context, ag *agent.AIAgent, input string) error {
+	maxIterations := 10
+	currentInput := input
+
+	for i := 0; i < maxIterations; i++ {
+		resp, err := ag.RunConversation(ctx, currentInput)
+		if err != nil {
+			return err
+		}
+
+		if resp == nil || len(resp.Choices) == 0 {
+			return fmt.Errorf("no response from model")
+		}
+
+		choice := resp.Choices[0]
+
+		if len(choice.ToolCalls) > 0 {
+			fmt.Println("Tool calls detected, processing...")
+			toolCallMaps := make([]map[string]interface{}, 0, len(choice.ToolCalls))
+			for _, tc := range choice.ToolCalls {
+				toolCallMaps = append(toolCallMaps, map[string]interface{}{
+					"id":      tc.ID,
+					"name":   tc.Function.Name,
+					"arguments": tc.Function.Arguments,
+				})
+			}
+
+			results, err := ag.ProcessToolCalls(ctx, toolCallMaps)
+			if err != nil {
+				return fmt.Errorf("failed to process tool calls: %w", err)
+			}
+
+			var resultMessages []model.Message
+			for j, result := range results {
+				resultContent := fmt.Sprintf("Tool %d result: %s", j+1, result["output"])
+				resultMessages = append(resultMessages, model.Message{
+					Role:    "tool",
+					Content: resultContent,
+				})
+			}
+
+			if len(resultMessages) > 0 {
+				for _, msg := range resultMessages {
+					ag.AddMessage(msg)
+				}
+			}
+
+			currentInput = "Continue"
 			continue
 		}
 
-		if resp != nil && len(resp.Choices) > 0 {
-			fmt.Printf("Response: %s\n", resp.Choices[0].Message.Content)
-		}
+		fmt.Printf("Response: %s\n", choice.Message.Content)
+		return nil
 	}
+
+	return fmt.Errorf("max iterations reached during tool call processing")
 }
 
 func printHelp() {

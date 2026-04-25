@@ -1,0 +1,81 @@
+{
+  "menu": {
+    "chat": "聊天",
+    "skills": "技能管理",
+    "memory": "记忆管理",
+    "sessions": "会话管理",
+    "stats": "统计信息"
+  },
+  "app": {
+    "title": "Carrot Agent",
+    "subtitle": ""
+  },
+  "chat": {
+    "placeholder": "输入消息，按 Enter 发送，Shift + Enter 换行...",
+    "send": "发送",
+    "clear": "清空",
+    "empty": "开始和 Carrot Agent 对话吧",
+    "thinking": "Agent 正在思考..."
+  },
+  "skills": {
+    "title": "技能管理",
+    "create": "创建技能",
+    "name": "技能名称",
+    "description": "技能描述",
+    "content": "技能内容",
+    "empty": "暂无技能",
+    "emptyDesc": "创建你的第一个技能，让 Agent 学会新的能力",
+    "success": "技能创建成功",
+    "filter": "筛选平台"
+  },
+  "memory": {
+    "title": "记忆管理",
+    "add": "添加记忆",
+    "type": "记忆类型",
+    "content": "记忆内容",
+    "metadata": "元数据（可选）",
+    "empty": "暂无记忆",
+    "emptyDesc": "为 Agent 添加记忆，帮助它更好地理解和回应你",
+    "success": "记忆添加成功"
+  },
+  "sessions": {
+    "title": "会话管理",
+    "delete": "删除",
+    "refresh": "刷新",
+    "empty": "暂无会话",
+    "emptyDesc": "开始一段新的对话吧",
+    "confirmDelete": "确定删除该会话吗？",
+    "deleteDesc": "删除后无法恢复",
+    "success": "会话删除成功"
+  },
+  "stats": {
+    "title": "统计信息",
+    "refresh": "刷新数据",
+    "toolCalls": "工具调用次数",
+    "skillCount": "技能数量",
+    "conversationLen": "会话长度",
+    "totalMemories": "总记忆数",
+    "memoryDistribution": "记忆分布",
+    "snapshot": "快照记忆",
+    "session": "会话记忆",
+    "longterm": "长期记忆"
+  },
+  "common": {
+    "loading": "加载中...",
+    "error": "操作失败",
+    "success": "操作成功",
+    "confirm": "确定",
+    "cancel": "取消",
+    "save": "保存",
+    "create": "创建",
+    "delete": "删除",
+    "edit": "编辑",
+    "view": "查看",
+    "refresh": "刷新",
+    "search": "搜索",
+    "filter": "筛选",
+    "reset": "重置",
+    "close": "关闭",
+    "required": "不能为空"
+  }
+}

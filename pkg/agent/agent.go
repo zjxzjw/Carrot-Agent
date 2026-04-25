@@ -111,7 +111,7 @@ type AgentConfig struct {
 	Temperature    float64
 	MaxTokens      int
 	EnableSkills   bool
-	EnableMemory    bool
+	EnableMemory   bool
 	SkillNudgeInt  int
 }
 
@@ -386,6 +386,8 @@ func (a *AIAgent) RunConversation(ctx context.Context, userInput string) (*model
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
+	logger.Info("Received user input: %s", userInput)
+
 	a.conversation = append(a.conversation, model.Message{
 		Role:    "user",
 		Content: userInput,
@@ -406,26 +408,63 @@ func (a *AIAgent) RunConversation(ctx context.Context, userInput string) (*model
 		req.Tools = make([]model.ToolDefinition, len(tools))
 		for i, t := range tools {
 			if fn, ok := t["function"].(map[string]interface{}); ok {
-				req.Tools[i] = model.ToolDefinition{
+				toolDef := model.ToolDefinition{
 					Name:        getString(fn, "name"),
 					Description: getString(fn, "description"),
 				}
+				if params, ok := fn["parameters"].(map[string]interface{}); ok {
+					properties := make(map[string]model.Property)
+					var required []string
+					
+					if props, ok := params["properties"].(map[string]interface{}); ok {
+						for name, prop := range props {
+							if propMap, ok := prop.(map[string]interface{}); ok {
+								properties[name] = model.Property{
+									Type:        getString(propMap, "type"),
+									Description: getString(propMap, "description"),
+								}
+							}
+						}
+					}
+					
+					if reqList, ok := params["required"].([]interface{}); ok {
+						for _, req := range reqList {
+							if reqStr, ok := req.(string); ok {
+								required = append(required, reqStr)
+							}
+						}
+					}
+					
+					toolDef.Parameters = model.ToolParameters{
+						Type:       "object",
+						Properties: properties,
+						Required:   required,
+					}
+				}
+				req.Tools[i] = toolDef
 			}
 		}
+		logger.Debug("Registered %d tools for model", len(tools))
 	}
 
 	if a.modelProvider == nil {
+		logger.Error("No model provider configured")
 		return nil, fmt.Errorf("no model provider configured")
 	}
 
+	logger.Info("Sending request to model: %s", a.config.ModelName)
 	resp, err := a.modelProvider.Chat(ctx, req)
 	if err != nil {
+		logger.Error("Failed to get model response: %v", err)
 		return nil, fmt.Errorf("failed to get model response: %w", err)
 	}
 
 	if len(resp.Choices) > 0 {
 		choice := resp.Choices[0]
 		a.conversation = append(a.conversation, choice.Message)
+		logger.Info("Received model response with finish reason: %s", choice.FinishReason)
+	} else {
+		logger.Warn("No choices returned from model")
 	}
 
 	return resp, nil
@@ -468,16 +507,21 @@ func (a *AIAgent) ProcessToolCalls(ctx context.Context, toolCalls []map[string]i
 	results := make([]map[string]interface{}, 0, len(toolCalls))
 
 	for _, tc := range toolCalls {
+		toolCallID, _ := tc["id"].(string)
 		parsed, err := tool.ParseToolCall(tc)
 		if err != nil {
 			results = append(results, map[string]interface{}{
-				"tool_call_id": tc["id"],
+				"tool_call_id": toolCallID,
 				"output":       fmt.Sprintf("Error parsing tool call: %v", err),
 			})
+			logger.Error("Failed to parse tool call: %v", err)
 			continue
 		}
 
-		result := a.toolRegistry.Execute(ctx, parsed.Name, parsed.Arguments)
+		// Create a context with timeout for tool execution
+		toolCtx, cancel := context.WithTimeout(ctx, 60*time.Second)
+		result := a.toolRegistry.Execute(toolCtx, parsed.Name, parsed.Arguments)
+		cancel()
 
 		output := ""
 		if result.Success {
@@ -486,12 +530,14 @@ func (a *AIAgent) ProcessToolCalls(ctx context.Context, toolCalls []map[string]i
 			} else {
 				output = fmt.Sprintf("%v", result.Output)
 			}
+			logger.Info("Tool %s executed successfully", parsed.Name)
 		} else {
 			output = result.Error
+			logger.Error("Tool %s execution failed: %s", parsed.Name, result.Error)
 		}
 
 		results = append(results, map[string]interface{}{
-			"tool_call_id": tc["id"],
+			"tool_call_id": toolCallID,
 			"output":       output,
 		})
 
@@ -592,6 +638,12 @@ func (a *AIAgent) ResetConversation() {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	a.conversation = make([]model.Message, 0)
+}
+
+func (a *AIAgent) AddMessage(msg model.Message) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	a.conversation = append(a.conversation, msg)
 }
 
 func (a *AIAgent) GetStats() map[string]interface{} {

@@ -1,147 +1,149 @@
 # 🥕 Carrot Agent
 
-基于 Go 语言开发的智能代理框架，专为容器化运行而设计，提供持久记忆、技能学习和工具调用等核心功能。
+[中文版本 (Chinese Version)](readme_zh.md)
 
-## 🌟 核心特性
+An intelligent agent framework developed in Go, designed for containerized operation, providing core features such as persistent memory, skill learning, and tool calling.
 
-- **智能代理功能**：工具调用、分层记忆管理、自动技能学习、跨会话上下文保持
-- **多模型支持**：OpenAI GPT、Claude 等多种大语言模型
-- **容器优先**：官方 Docker 镜像和 Docker Compose 配置
-- **持久化存储**：SQLite 数据库存储记忆、技能和会话
-- **自进化能力**：完成复杂任务后自动生成可复用技能
-- **高性能**：Go 语言实现，低资源占用
-- **安全隔离**：非 root 用户运行，最小权限原则
+## 🌟 Core Features
 
-## 📦 快速开始
+- **Intelligent Agent Functions**: Tool calling, hierarchical memory management, automatic skill learning, cross-session context maintenance
+- **Multi-model Support**: OpenAI GPT, Claude, and other large language models
+- **Container-first**: Official Docker images and Docker Compose configuration
+- **Persistent Storage**: SQLite database for storing memories, skills, and sessions
+- **Self-evolution**: Automatically generate reusable skills after completing complex tasks
+- **High Performance**: Go language implementation with low resource consumption
+- **Secure Isolation**: Runs as non-root user with least privilege principle
 
-### 1. Docker 部署 (推荐)
+## 📦 Quick Start
+
+### 1. Docker Deployment (Recommended)
 
 ```bash
-# 克隆代码
+# Clone code
 git clone https://github.com/your-org/carrot-agent.git
 cd carrot-agent
 
-# 配置环境变量
+# Configure environment variables
 cp .env.example .env
-vim .env  # 填写你的 API Key
+vim .env  # Fill in your API Key
 
-# 启动容器
+# Start container
 docker-compose up -d
 
-# 进入容器
+# Enter container
 docker exec -it carrot-agent /bin/sh
 /app/carrot-agent
 ```
 
-### 2. 本地运行
+### 2. Local Run
 
 ```bash
-# 安装依赖
+# Install dependencies
 go mod tidy
 
-# 配置
+# Configure
 cp config.yaml.example ~/.carrot/config.yaml
 vim ~/.carrot/config.yaml
 
-# 运行
+# Run
 go run ./cmd/cli
 ```
 
-## 🎯 功能特性
+## 🎯 Features
 
-### 智能代理
+### Intelligent Agent
 
-- **工具调用**：执行各种工具操作
-- **记忆管理**：分层记忆架构（快照、技能、情景、长期）
-- **技能学习**：自动生成和更新技能
-- **会话管理**：保持跨会话上下文
+- **Tool Calling**: Execute various tool operations
+- **Memory Management**: Hierarchical memory architecture (snapshot, skill, context, long-term)
+- **Skill Learning**: Automatically generate and update skills
+- **Session Management**: Maintain cross-session context
 
-### 容器化
+### Containerization
 
-- **Docker 支持**：官方 Docker 镜像
-- **Docker Compose**：一键部署
-- **数据持久化**：卷挂载确保数据不丢失
-- **安全隔离**：非 root 用户运行
+- **Docker Support**: Official Docker images
+- **Docker Compose**: One-click deployment
+- **Data Persistence**: Volume mounting ensures data is not lost
+- **Secure Isolation**: Runs as non-root user
 
-## 📁 项目结构
+## 📁 Project Structure
 
 ```
 carrot-agent/
-├── cmd/cli/main.go           # CLI 入口
+├── cmd/cli/main.go           # CLI entry point
 ├── pkg/
-│   ├── agent/               # 核心代理引擎
-│   │   ├── agent.go         # 代理核心逻辑
-│   │   ├── memory/          # 分层记忆管理
-│   │   ├── skill/           # 技能系统
-│   │   ├── model/           # 模型提供者
-│   │   └── tool/            # 工具注册表
-│   └── storage/            # 存储管理
-├── config/                # 配置管理
-├── Dockerfile             # 容器化构建
-├── docker-compose.yaml    # Docker Compose 部署
-├── config.yaml.example    # 配置示例
-└── ARCHITECTURE.md       # 架构文档
+│   ├── agent/               # Core agent engine
+│   │   ├── agent.go         # Agent core logic
+│   │   ├── memory/          # Hierarchical memory management
+│   │   ├── skill/           # Skill system
+│   │   ├── model/           # Model providers
+│   │   └── tool/            # Tool registry
+│   └── storage/            # Storage management
+├── config/                # Configuration management
+├── Dockerfile             # Containerization build
+├── docker-compose.yaml    # Docker Compose deployment
+├── config.yaml.example    # Configuration example
+└── ARCHITECTURE.md       # Architecture documentation
 ```
 
-## 🛠️ 技术栈
+## 🛠️ Tech Stack
 
-- **语言**：Go 1.22+
-- **存储**：SQLite
-- **配置**：YAML
-- **容器**：Docker
-- **模型**：OpenAI GPT、Claude
+- **Language**: Go 1.22+
+- **Storage**: SQLite
+- **Configuration**: YAML
+- **Container**: Docker
+- **Models**: OpenAI GPT, Claude
 
-## 📚 配置说明
+## 📚 Configuration
 
-### 环境变量
+### Environment Variables
 
-| 变量名                     | 描述         | 默认值                         |
-| ----------------------- | ---------- | --------------------------- |
-| CARROT\_API\_KEY        | 模型 API Key | -                           |
-| CARROT\_MODEL\_PROVIDER | 模型提供者      | openai                      |
-| CARROT\_MODEL\_NAME     | 模型名称       | gpt-4                       |
-| CARROT\_BASE\_URL       | API 基础 URL | <https://api.openai.com/v1> |
+| Variable Name            | Description      | Default Value                 |
+| ----------------------- | --------------- | ----------------------------- |
+| CARROT\_API\_KEY        | Model API Key   | -                             |
+| CARROT\_MODEL\_PROVIDER | Model Provider  | openai                        |
+| CARROT\_MODEL\_NAME     | Model Name      | gpt-4                         |
+| CARROT\_BASE\_URL       | API Base URL    | <https://api.openai.com/v1>   |
 
-### 配置文件
+### Configuration File
 
-参考 `config.yaml.example` 文件配置详细参数。
+Refer to the `config.yaml.example` file for detailed configuration parameters.
 
-## 🤖 命令行操作
+## 🤖 Command Line Operations
 
-| 命令        | 描述       |
-| --------- | -------- |
-| help      | 显示帮助信息   |
-| quit/exit | 退出代理     |
-| reset     | 重置对话历史   |
-| stats     | 显示代理统计信息 |
-| skills    | 列出可用技能   |
+| Command    | Description                |
+| --------- | -------------------------- |
+| help      | Display help information   |
+| quit/exit | Exit the agent             |
+| reset     | Reset conversation history |
+| stats     | Display agent statistics   |
+| skills    | List available skills      |
 
-## 📈 开发路线
+## 📈 Development Roadmap
 
-1. **核心代理功能**：实现模型调用、工具执行
-2. **记忆系统**：实现分层记忆管理
-3. **技能系统**：实现自动技能生成
-4. **容器化**：完善 Docker 部署
-5. **API 服务**：实现 REST API
+1. **Core Agent Functionality**: Implement model calling and tool execution
+2. **Memory System**: Implement hierarchical memory management
+3. **Skill System**: Implement automatic skill generation
+4. **Containerization**: Complete Docker deployment
+5. **API Service**: Implement REST API
 
-## 📄 许可证
+## 📄 License
 
 MIT License
 
-## 🤔 常见问题
+## 🤔 FAQ
 
-### Q: 如何配置模型？
+### Q: How to configure the model?
 
-A: 在 `config.yaml` 中设置 `model` 部分的参数，或通过环境变量配置。
+A: Set the parameters in the `model` section of `config.yaml`, or configure via environment variables.
 
-### Q: 数据存储在哪里？
+### Q: Where is the data stored?
 
-A: 数据存储在 `~/.carrot` 目录下的 SQLite 数据库中。
+A: Data is stored in the SQLite database under the `~/.carrot` directory.
 
-### Q: 如何添加自定义工具？
+### Q: How to add custom tools?
 
-A: 在 `pkg/agent/agent.go` 的 `registerDefaultTools` 方法中注册新工具。
+A: Register new tools in the `registerDefaultTools` method in `pkg/agent/agent.go`.
 
-## 📞 支持
+## 📞 Support
 
-如有问题或建议，请提交 Issue 或联系我们。
+For questions or suggestions, please submit an Issue or contact us.
