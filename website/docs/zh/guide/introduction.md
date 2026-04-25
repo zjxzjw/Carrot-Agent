@@ -10,6 +10,8 @@ Carrot Agent 是一个使用 Go 语言开发的智能代理框架，专为容器
 - **自主学习**：从复杂工作流中自动创建可复用技能
 - **执行任务**：通过工具调用执行真实世界的任务
 - **高效扩展**：在容器中以最小资源消耗高效运行
+- **安全可靠**：为工具操作实现严格的安全约束
+- **多语言支持**：支持英文和中文
 
 ## 核心特性
 
@@ -33,8 +35,8 @@ Carrot Agent 是一个使用 Go 语言开发的智能代理框架，专为容器
 ### 🔧 强大的工具注册表
 
 内置工具包括：
-- 文件读写操作
-- HTTP 请求
+- 文件读写操作（带路径限制）
+- HTTP 请求（带 URL 验证）
 - 记忆管理
 - 技能 CRUD 操作
 - 系统信息
@@ -56,6 +58,14 @@ Carrot Agent 是一个使用 Go 语言开发的智能代理框架，专为容器
 - OpenAI GPT 模型（GPT-4、GPT-3.5）
 - Anthropic Claude
 - 任何兼容 OpenAI 的 API（OpenRouter 等）
+
+### 🎨 现代 Web 界面
+
+- 使用 React、TypeScript 和 Ant Design 构建
+- 响应式设计，适用于桌面和移动设备
+- 实时聊天界面，显示工具执行结果
+- 多语言支持（英文和中文）
+- 身份验证，确保安全访问
 
 ## 使用场景
 
@@ -91,3 +101,4 @@ curl -X POST http://localhost:8080/api/chat \
 - [快速上手](/zh/guide/quick-start) - 5 分钟内开始使用
 - [安装指南](/zh/guide/installation) - 详细的安装说明
 - [架构说明](/zh/guide/architecture) - 了解工作原理
+- [API 参考](/zh/api/overview) - 探索 API 端点

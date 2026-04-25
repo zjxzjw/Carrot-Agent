@@ -42,6 +42,9 @@ Current Version: 0.1.0
 - **Secure Isolation**: Runs as non-root user with least privilege principle
 - **API Interface**: RESTful API for integration with other systems
 - **Web UI**: Built-in web interface for easy management
+- **Multi-language Support**: English and Chinese language options
+- **File System Access**: Secure file operations with path restrictions
+- **HTTP Network Access**: Secure HTTP requests with URL validation
 
 ## 📦 Quick Start
 
@@ -93,17 +96,25 @@ go run ./cmd/api
 
 ### Intelligent Agent
 
-- **Tool Calling**: Execute various tool operations
+- **Tool Calling**: Execute various tool operations including file operations, HTTP requests, and system commands
 - **Memory Management**: Hierarchical memory architecture (snapshot, skill, context, long-term)
-- **Skill Learning**: Automatically generate and update skills
-- **Session Management**: Maintain cross-session context
+- **Skill Learning**: Automatically generate and update skills from completed tasks
+- **Session Management**: Maintain cross-session context and conversation history
+- **Self-evolution**: Automatically create skills from repeated workflows
 
 ### Containerization
 
 - **Docker Support**: Official Docker images
-- **Docker Compose**: One-click deployment
-- **Data Persistence**: Volume mounting ensures data is not lost
-- **Secure Isolation**: Runs as non-root user
+- **Docker Compose**: One-click deployment with all dependencies
+- **Data Persistence**: Volume mounting ensures data is not lost between container restarts
+- **Secure Isolation**: Runs as non-root user with restricted file system access
+
+### Web Interface
+
+- **Modern UI**: Built with React, TypeScript, and Ant Design
+- **Multi-language**: English and Chinese language support
+- **Responsive Design**: Works on desktop and mobile devices
+- **Real-time Updates**: Live chat interface with tool execution results
 
 ## 📁 Project Structure
 
@@ -124,7 +135,16 @@ carrot-agent/
 │   ├── logger/             # Logging system
 │   └── storage/            # Storage management (SQLite)
 ├── ui/                     # Web interface
+│   ├── public/             # Static assets
+│   ├── src/                # React source code
+│   │   ├── components/     # UI components
+│   │   ├── pages/          # Application pages
+│   │   ├── services/       # API services
+│   │   └── store/          # Redux store
+│   └── package.json        # Frontend dependencies
 ├── website/                # Documentation website
+│   ├── docs/               # Markdown documentation
+│   └── package.json        # Documentation site dependencies
 ├── Dockerfile              # Containerization build
 ├── docker-compose.yaml     # Docker Compose deployment
 ├── config.yaml.example     # Configuration example
@@ -137,15 +157,17 @@ carrot-agent/
 
 ## 🛠️ Tech Stack
 
-- **Language**: Go 1.22+
+- **Language**: Go 1.26.2+
 - **Storage**: SQLite (embedded database)
 - **Configuration**: YAML
 - **Container**: Docker, Docker Compose
-- **Frontend**: React, TypeScript, Ant Design
+- **Frontend**: React 18.2.0, TypeScript 5.2.2, Ant Design 5.12.8
+- **State Management**: Redux Toolkit 2.0.1
 - **API**: RESTful HTTP API
 - **Models**: OpenAI GPT, Claude (Anthropic)
 - **Logging**: Structured logging
 - **Testing**: Go testing framework
+- **Build Tool**: Vite 5.0.8 (frontend)
 
 ## 📚 Configuration
 
@@ -160,7 +182,7 @@ carrot-agent/
 
 ### Authentication
 
-Carrot Agent now includes authentication functionality. The default credentials are:
+Carrot Agent includes authentication functionality. The default credentials are:
 - Username: `admin`
 - Password: `admin123`
 
@@ -205,6 +227,8 @@ I'm Carrot Agent, an intelligent assistant with memory and skill learning capabi
 - Learn and generate skills
 - Maintain cross-session context
 - Provide system information
+- Access files securely
+- Make HTTP requests
 
 How can I assist you today?
 ```
@@ -228,6 +252,15 @@ How can I assist you today?
     }
   }
 }
+
+> Get system information
+{
+  "toolcall": {
+    "thought": "Getting system information",
+    "name": "system_info",
+    "args": {}
+  }
+}
 ```
 
 ### Creating Skills
@@ -247,13 +280,33 @@ How can I assist you today?
 }
 ```
 
+### Using HTTP Tools
+
+```bash
+> Get the current weather in Beijing
+{
+  "toolcall": {
+    "thought": "I need to make an HTTP request to get weather information",
+    "name": "http_get",
+    "args": {
+      "url": "https://api.weatherapi.com/v1/current.json?key=YOUR_API_KEY&q=Beijing"
+    }
+  }
+}
+```
+
 ## 📈 Development Roadmap
 
-1. **Core Agent Functionality**: Implement model calling and tool execution
-2. **Memory System**: Implement hierarchical memory management
-3. **Skill System**: Implement automatic skill generation
-4. **Containerization**: Complete Docker deployment
-5. **API Service**: Implement REST API
+1. **Core Agent Functionality**: ✅ Implement model calling and tool execution
+2. **Memory System**: ✅ Implement hierarchical memory management
+3. **Skill System**: ✅ Implement automatic skill generation
+4. **Containerization**: ✅ Complete Docker deployment
+5. **API Service**: ✅ Implement REST API
+6. **Web Interface**: ✅ Build modern React UI
+7. **Multi-language Support**: ✅ Add English and Chinese localization
+8. **Advanced Tool Integration**: Enhance tool capabilities and security
+9. **Performance Optimization**: Improve response times and resource usage
+10. **Extended Model Support**: Add more model providers
 
 ## 📄 License
 
@@ -273,6 +326,14 @@ A: Data is stored in the SQLite database under the `~/.carrot` directory.
 
 A: Register new tools in the `registerDefaultTools` method in `pkg/agent/agent.go`.
 
+### Q: Is the file system access secure?
+
+A: Yes, Carrot Agent has path restrictions and a blocklist to prevent unauthorized access to sensitive files and directories.
+
+### Q: Can I use custom model providers?
+
+A: Yes, you can implement custom model providers by extending the `model.Provider` interface.
+
 ## 📞 Support
 
 For questions or suggestions, please submit an Issue or contact us.
@@ -284,3 +345,4 @@ For detailed documentation, please visit our official website:
 - [Official Documentation](https://zjxzjw.github.io/Carrot-Agent/)
 - [API Reference](https://zjxzjw.github.io/Carrot-Agent/api/overview)
 - [Usage Examples](https://zjxzjw.github.io/Carrot-Agent/examples/basic)
+- [Architecture Guide](https://zjxzjw.github.io/Carrot-Agent/guide/architecture)

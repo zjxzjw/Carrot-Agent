@@ -10,6 +10,8 @@ Unlike traditional chatbots, Carrot Agent:
 - **Learns**: Automatically creates reusable skills from complex workflows
 - **Acts**: Executes real-world tasks through tool calling
 - **Scales**: Runs efficiently in containers with minimal resource usage
+- **Secures**: Implements strict security constraints for tool operations
+- **Localizes**: Supports both English and Chinese languages
 
 ## Key Features
 
@@ -33,8 +35,8 @@ This means your agent gets smarter over time!
 ### 🔧 Powerful Tool Registry
 
 Built-in tools include:
-- File read/write operations
-- HTTP requests
+- File read/write operations (with path restrictions)
+- HTTP requests (with URL validation)
 - Memory management
 - Skill CRUD operations
 - System information
@@ -56,6 +58,14 @@ Works seamlessly with:
 - OpenAI GPT models (GPT-4, GPT-3.5)
 - Anthropic Claude
 - Any OpenAI-compatible API (OpenRouter, etc.)
+
+### 🎨 Modern Web Interface
+
+- Built with React, TypeScript, and Ant Design
+- Responsive design for desktop and mobile
+- Real-time chat interface with tool execution results
+- Multi-language support (English and Chinese)
+- Authentication for secure access
 
 ## Use Cases
 
@@ -91,3 +101,4 @@ The agent will:
 - [Quick Start](/guide/quick-start) - Get up and running in 5 minutes
 - [Installation](/guide/installation) - Detailed installation guide
 - [Architecture](/guide/architecture) - Understand how it works
+- [API Reference](/api/overview) - Explore the API endpoints
