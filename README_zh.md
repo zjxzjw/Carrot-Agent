@@ -1,4 +1,4 @@
-# 🥕 Carrot Agent
+# Carrot Agent
 
 ![Carrot Agent Logo](logo.png)
 
@@ -28,7 +28,7 @@
 
 ```bash
 # 克隆代码
-git clone https://github.com/your-org/carrot-agent.git
+git clone https://github.com/zjxzjw/Carrot-Agent.git
 cd carrot-agent
 
 # 配置环境变量
@@ -150,6 +150,65 @@ carrot-agent/
 | reset     | 重置对话历史   |
 | stats     | 显示代理统计信息 |
 | skills    | 列出可用技能   |
+
+## 📖 使用示例
+
+### 基本对话
+
+```bash
+$ go run ./cmd/cli
+
+Carrot Agent v0.1.0
+Type 'help' for available commands
+
+> 你好，你能做什么？
+我是 Carrot Agent，一个具有记忆和技能学习能力的智能助手。我可以：
+- 执行工具操作
+- 管理分层记忆
+- 学习和生成技能
+- 保持跨会话上下文
+- 提供系统信息
+
+今天我能为您提供什么帮助？
+```
+
+### 使用工具
+
+```bash
+> 当前时间是什么？
+{
+  "current_time": "2024-01-01T12:00:00Z",
+  "unix_time": 1704067200
+}
+
+> 读取配置文件
+{
+  "toolcall": {
+    "thought": "我需要读取配置文件来查看当前配置",
+    "name": "file_read",
+    "args": {
+      "file_path": "~/.carrot/config.yaml"
+    }
+  }
+}
+```
+
+### 创建技能
+
+```bash
+> 创建一个生成每日报告的技能
+{
+  "toolcall": {
+    "thought": "创建一个生成每日报告的技能",
+    "name": "skill_create",
+    "args": {
+      "name": "daily_report",
+      "description": "生成每日活动报告",
+      "content": "# 每日报告生成器\n\n此技能根据最近的活动生成每日报告。\n\n## 使用方法\n1. 收集活动数据\n2. 分析模式\n3. 生成摘要\n4. 将报告保存到文件"
+    }
+  }
+}
+```
 
 ## 📈 开发路线
 

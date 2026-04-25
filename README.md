@@ -1,4 +1,4 @@
-# 🥕 Carrot Agent
+# Carrot Agent
 
 ![Carrot Agent Logo](logo.png)
 
@@ -28,7 +28,7 @@ Current Version: 0.1.0
 
 ```bash
 # Clone code
-git clone https://github.com/your-org/carrot-agent.git
+git clone https://github.com/zjxzjw/Carrot-Agent.git
 cd carrot-agent
 
 # Configure environment variables
@@ -130,12 +130,12 @@ carrot-agent/
 
 ### Environment Variables
 
-| Variable Name            | Description      | Default Value                 |
-| ----------------------- | --------------- | ----------------------------- |
-| CARROT\_API\_KEY        | Model API Key   | -                             |
-| CARROT\_MODEL\_PROVIDER | Model Provider  | openai                        |
-| CARROT\_MODEL\_NAME     | Model Name      | gpt-4                         |
-| CARROT\_BASE\_URL       | API Base URL    | <https://api.openai.com/v1>   |
+| Variable Name           | Description    | Default Value               |
+| ----------------------- | -------------- | --------------------------- |
+| CARROT\_API\_KEY        | Model API Key  | -                           |
+| CARROT\_MODEL\_PROVIDER | Model Provider | openai                      |
+| CARROT\_MODEL\_NAME     | Model Name     | gpt-4                       |
+| CARROT\_BASE\_URL       | API Base URL   | <https://api.openai.com/v1> |
 
 ### Configuration File
 
@@ -143,7 +143,7 @@ Refer to the `config.yaml.example` file for detailed configuration parameters.
 
 ## 🤖 Command Line Operations
 
-| Command    | Description                |
+| Command   | Description                |
 | --------- | -------------------------- |
 | help      | Display help information   |
 | quit/exit | Exit the agent             |

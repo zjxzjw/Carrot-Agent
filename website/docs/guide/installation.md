@@ -13,7 +13,7 @@ Detailed installation instructions for different environments.
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/your-org/carrot-agent.git
+git clone https://github.com/zjxzjw/Carrot-Agent.git
 cd carrot-agent
 ```
 
@@ -46,7 +46,7 @@ curl http://localhost:8080/health
 
 ```bash
 # Clone repository
-git clone https://github.com/your-org/carrot-agent.git
+git clone https://github.com/zjxzjw/Carrot-Agent.git
 cd carrot-agent
 
 # Build backend

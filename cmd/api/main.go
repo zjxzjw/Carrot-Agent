@@ -25,6 +25,8 @@ var (
 	aiAgent *agent.AIAgent
 	store   *storage.Store
 	appConfig *config.Config
+	sessions = make(map[string]time.Time) // 存储会话ID和过期时间
+	sessionTimeout = 24 * time.Hour // 会话超时时间
 )
 
 func loadConfig() *config.Config {
@@ -62,6 +64,50 @@ func applyEnvOverrides(cfg *config.Config) {
 	}
 	if provider := os.Getenv("CARROT_MODEL_PROVIDER"); provider != "" {
 		cfg.Model.Provider = provider
+	}
+}
+
+func generateSessionID() string {
+	return fmt.Sprintf("%d", time.Now().UnixNano())
+}
+
+func cleanupExpiredSessions() {
+	for sessionID, expiry := range sessions {
+		if time.Now().After(expiry) {
+			delete(sessions, sessionID)
+		}
+	}
+}
+
+func authMiddleware(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// 清理过期会话
+		cleanupExpiredSessions()
+
+		// 跳过登录和健康检查路径的鉴权
+		if r.URL.Path == "/api/login" || r.URL.Path == "/health" {
+			next(w, r)
+			return
+		}
+
+		// 从请求头获取会话ID
+		sessionID := r.Header.Get("Authorization")
+		if sessionID == "" {
+			http.Error(w, "Unauthorized: No session ID provided", http.StatusUnauthorized)
+			return
+		}
+
+		// 验证会话是否有效
+		expiry, ok := sessions[sessionID]
+		if !ok || time.Now().After(expiry) {
+			http.Error(w, "Unauthorized: Invalid or expired session", http.StatusUnauthorized)
+			return
+		}
+
+		// 延长会话过期时间
+		sessions[sessionID] = time.Now().Add(sessionTimeout)
+
+		next(w, r)
 	}
 }
 
@@ -138,13 +184,14 @@ func main() {
 	aiAgent = agentInstance
 
 	http.HandleFunc("/health", handleHealth)
-	http.HandleFunc("/api/chat", handleChat)
-	http.HandleFunc("/api/skills", handleSkills)
-	http.HandleFunc("/api/memory", handleMemory)
-	http.HandleFunc("/api/stats", handleStats)
-	http.HandleFunc("/api/session/", handleSession)
-	http.HandleFunc("/api/config", handleConfig)
-	http.HandleFunc("/api/models", handleModels)
+	http.HandleFunc("/api/login", handleLogin)
+	http.HandleFunc("/api/chat", authMiddleware(handleChat))
+	http.HandleFunc("/api/skills", authMiddleware(handleSkills))
+	http.HandleFunc("/api/memory", authMiddleware(handleMemory))
+	http.HandleFunc("/api/stats", authMiddleware(handleStats))
+	http.HandleFunc("/api/session/", authMiddleware(handleSession))
+	http.HandleFunc("/api/config", authMiddleware(handleConfig))
+	http.HandleFunc("/api/models", authMiddleware(handleModels))
 
 	server := &http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.Server.Port),
@@ -183,6 +230,44 @@ func handleHealth(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+}
+
+func handleLogin(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req struct {
+		Username string `json:"username"`
+		Password string `json:"password"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request", http.StatusBadRequest)
+		return
+	}
+
+	// 验证用户名和密码
+	if req.Username != appConfig.Auth.Username || req.Password != appConfig.Auth.Password {
+		http.Error(w, "Invalid username or password", http.StatusUnauthorized)
+		return
+	}
+
+	// 生成会话ID
+	sessionID := generateSessionID()
+	sessions[sessionID] = time.Now().Add(sessionTimeout)
+
+	response := struct {
+		SessionID string `json:"session_id"`
+		Message   string `json:"message"`
+	}{
+		SessionID: sessionID,
+		Message:   "Login successful",
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
 }
 
 func handleSession(w http.ResponseWriter, r *http.Request) {

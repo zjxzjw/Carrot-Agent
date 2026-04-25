@@ -10,7 +10,7 @@ Get Carrot Agent running in under 5 minutes!
 ## Step 1: Clone the Repository
 
 ```bash
-git clone https://github.com/your-org/carrot-agent.git
+git clone https://github.com/zjxzjw/Carrot-Agent.git
 cd carrot-agent
 ```
 
@@ -149,5 +149,5 @@ ports:
 ## Need Help?
 
 - 📖 Read the [Documentation](/guide/introduction)
-- 🐛 Report issues on [GitHub](https://github.com/your-org/carrot-agent/issues)
+- 🐛 Report issues on [GitHub](https://github.com/zjxzjw/Carrot-Agent/issues)
 - 💬 Join our community discussions

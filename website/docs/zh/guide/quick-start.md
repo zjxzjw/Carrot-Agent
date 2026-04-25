@@ -10,7 +10,7 @@
 ## 步骤 1：克隆仓库
 
 ```bash
-git clone https://github.com/your-org/carrot-agent.git
+git clone https://github.com/zjxzjw/Carrot-Agent.git
 cd carrot-agent
 ```
 
@@ -149,5 +149,5 @@ ports:
 ## 需要帮助？
 
 - 📖 阅读[文档](/zh/guide/introduction)
-- 🐛 在 [GitHub](https://github.com/your-org/carrot-agent/issues) 报告问题
+- 🐛 在 [GitHub](https://github.com/zjxzjw/Carrot-Agent/issues) 报告问题
 - 💬 加入我们的社区讨论

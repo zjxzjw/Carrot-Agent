@@ -14,7 +14,7 @@
 
 2. **进入 Pages 设置**
    - 在左侧边栏找到并点击 **Pages**
-   - 或者访问：`https://github.com/your-org/carrot-agent/settings/pages`
+   - 或者访问：`https://github.com/zjxzjw/Carrot-Agent/settings/pages`
 
 3. **配置部署源**
    - 在 "Build and deployment" 部分
@@ -62,7 +62,7 @@ git push origin main
 ### 步骤 4：监控部署过程
 
 1. **查看 Actions**
-   - 访问：`https://github.com/your-org/carrot-agent/actions`
+   - 访问：`https://github.com/zjxzjw/Carrot-Agent/actions`
    - 你会看到 "Deploy Website" 工作流正在运行
 
 2. **检查部署状态**
@@ -201,7 +201,7 @@ git push origin main
 在 README.md 中添加：
 
 ```markdown
-![Deploy Status](https://github.com/your-org/carrot-agent/actions/workflows/deploy-website.yml/badge.svg)
+![Deploy Status](https://github.com/zjxzjw/Carrot-Agent/actions/workflows/deploy-website.yml/badge.svg)
 ```
 
 ### 2. 配置自定义域名（可选）
@@ -241,7 +241,7 @@ git push origin main
 ### 查看部署历史
 
 ```
-https://github.com/your-org/carrot-agent/deployments
+https://github.com/zjxzjw/Carrot-Agent/deployments
 ```
 
 ### 手动触发部署
@@ -300,7 +300,7 @@ git commit -m "Update website"
 git push origin main
 
 # 查看部署状态
-# 访问: https://github.com/your-org/carrot-agent/actions
+# 访问: https://github.com/zjxzjw/Carrot-Agent/actions
 ```
 
 ## 📞 获取帮助

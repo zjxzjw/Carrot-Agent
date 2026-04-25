@@ -14,7 +14,7 @@ hero:
       link: /guide/quick-start
     - theme: alt
       text: View on GitHub
-      link: https://github.com/your-org/carrot-agent
+      link: https://github.com/zjxzjw/Carrot-Agent
 
 features:
   - icon: 🧠
@@ -25,7 +25,7 @@ features:
     details: Automatically generates reusable skills from complex workflows after completing tasks
   - icon: 🔧
     title: Tool Calling
-    details: Built-in tools for file operations, HTTP requests, memory management, and more
+    details: Built-in tools for file operations, HTTP requests, memory management, system information, and more
   - icon: 🐳
     title: Container-First
     details: Official Docker images with secure isolation and one-click deployment
@@ -35,6 +35,15 @@ features:
   - icon: ⚡
     title: High Performance
     details: Built with Go for low resource consumption and fast execution
+  - icon: 🔒
+    title: Secure Operation
+    details: Path and URL validation, non-root user execution, and least privilege principle
+  - icon: 📊
+    title: Session Management
+    details: Save and load conversations for continuous context across sessions
+  - icon: 🖥️
+    title: Web Interface
+    details: Built-in React-based web UI for easy management and monitoring
 ---
 
 <style>

@@ -14,7 +14,7 @@ hero:
       link: /zh/guide/quick-start
     - theme: alt
       text: 查看 GitHub
-      link: https://github.com/your-org/carrot-agent
+      link: https://github.com/zjxzjw/Carrot-Agent
 
 features:
   - icon: 🧠
@@ -25,7 +25,7 @@ features:
     details: 完成任务后自动生成可复用的技能，让代理越来越智能
   - icon: 🔧
     title: 工具调用
-    details: 内置文件操作、HTTP 请求、记忆管理等强大工具
+    details: 内置文件操作、HTTP 请求、记忆管理、系统信息等强大工具
   - icon: 🐳
     title: 容器优先设计
     details: 官方 Docker 镜像，安全隔离，一键部署
@@ -35,6 +35,15 @@ features:
   - icon: ⚡
     title: 高性能
     details: 基于 Go 语言构建，低资源消耗，快速执行
+  - icon: 🔒
+    title: 安全操作
+    details: 路径和 URL 验证，非 root 用户执行，最小权限原则
+  - icon: 📊
+    title: 会话管理
+    details: 保存和加载对话，确保跨会话的连续上下文
+  - icon: 🖥️
+    title: Web 界面
+    details: 内置基于 React 的 Web UI，方便管理和监控
 ---
 
 <style>

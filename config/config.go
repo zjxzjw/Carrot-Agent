@@ -13,6 +13,7 @@ type Config struct {
 	Storage  StorageConfig  `yaml:"storage"`
 	Server   ServerConfig   `yaml:"server"`
 	Security SecurityConfig `yaml:"security"`
+	Auth     AuthConfig     `yaml:"auth"`
 }
 
 type AgentConfig struct {
@@ -50,6 +51,11 @@ type SecurityConfig struct {
 	BlockedCmds  []string `yaml:"blocked_cmds"`
 }
 
+type AuthConfig struct {
+	Username string `yaml:"username"`
+	Password string `yaml:"password"`
+}
+
 func (c *Config) Validate() []error {
 	var errors []error
 
@@ -75,6 +81,14 @@ func (c *Config) Validate() []error {
 
 	if c.Agent.SkillNudgeInt < 0 {
 		errors = append(errors, fmt.Errorf("skill_nudge_interval cannot be negative, got %d", c.Agent.SkillNudgeInt))
+	}
+
+	if c.Auth.Username == "" {
+		errors = append(errors, fmt.Errorf("auth username is required"))
+	}
+
+	if c.Auth.Password == "" {
+		errors = append(errors, fmt.Errorf("auth password is required"))
 	}
 
 	return errors
@@ -127,6 +141,10 @@ func Default() *Config {
 		Security: SecurityConfig{
 			AllowedPaths: []string{"~/.carrot"},
 			BlockedCmds:  []string{"rm -rf /", ":(){ :|:& };:"},
+		},
+		Auth: AuthConfig{
+			Username: "admin",
+			Password: "admin123",
 		},
 	}
 }

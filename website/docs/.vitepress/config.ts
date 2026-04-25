@@ -23,7 +23,7 @@ export default defineConfig({
           { 
             text: 'Links',
             items: [
-              { text: 'GitHub', link: 'https://github.com/your-org/carrot-agent' },
+              { text: 'GitHub', link: 'https://github.com/zjxzjw/Carrot-Agent' },
               { text: 'Docker Hub', link: 'https://hub.docker.com/r/carrotagent/carrot-agent' },
             ]
           }
@@ -90,7 +90,7 @@ export default defineConfig({
           ]
         },
         editLink: {
-          pattern: 'https://github.com/your-org/carrot-agent/edit/main/website/docs/:path',
+          pattern: 'https://github.com/zjxzjw/Carrot-Agent/edit/main/website/docs/:path',
           text: 'Edit this page on GitHub'
         },
         footer: {
@@ -111,7 +111,7 @@ export default defineConfig({
           { 
             text: '链接',
             items: [
-              { text: 'GitHub', link: 'https://github.com/your-org/carrot-agent' },
+              { text: 'GitHub', link: 'https://github.com/zjxzjw/Carrot-Agent' },
               { text: 'Docker Hub', link: 'https://hub.docker.com/r/carrotagent/carrot-agent' },
             ]
           }
@@ -178,7 +178,7 @@ export default defineConfig({
           ]
         },
         editLink: {
-          pattern: 'https://github.com/your-org/carrot-agent/edit/main/website/docs/:path',
+          pattern: 'https://github.com/zjxzjw/Carrot-Agent/edit/main/website/docs/:path',
           text: '在 GitHub 上编辑此页'
         },
         footer: {
@@ -199,7 +199,7 @@ export default defineConfig({
       { 
         text: 'Links',
         items: [
-          { text: 'GitHub', link: 'https://github.com/your-org/carrot-agent' },
+          { text: 'GitHub', link: 'https://github.com/zjxzjw/Carrot-Agent' },
           { text: 'Docker Hub', link: 'https://hub.docker.com/r/carrotagent/carrot-agent' },
         ]
       }
@@ -268,7 +268,7 @@ export default defineConfig({
     },
 
     socialLinks: [
-      { icon: 'github', link: 'https://github.com/your-org/carrot-agent' }
+      { icon: 'github', link: 'https://github.com/zjxzjw/Carrot-Agent' }
     ],
 
     search: {
