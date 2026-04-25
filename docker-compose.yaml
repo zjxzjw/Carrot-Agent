@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  carrot-agent:
+    build: .
+    image: carrotagent/carrot-agent:latest
+    container_name: carrot-agent
+    environment:
+      - CARROT_DATA_DIR=/root/.carrot
+      - CARROT_MODEL_PROVIDER=${CARROT_MODEL_PROVIDER:-openai}
+      - CARROT_MODEL_NAME=${CARROT_MODEL_NAME:-gpt-4}
+      - CARROT_API_KEY=${CARROT_API_KEY}
+      - CARROT_BASE_URL=${CARROT_BASE_URL:-https://api.openai.com/v1}
+    volumes:
+      - carrot-data:/root/.carrot
+    restart: unless-stopped
+    stdin_open: true
+    tty: true
+
+volumes:
+  carrot-data:
+    driver: local

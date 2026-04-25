@@ -1,0 +1,32 @@
+agent:
+  name: carrot-agent
+  version: 0.1.0
+  data_dir: ~/.carrot
+  log_level: info
+  skill_nudge_interval: 10
+
+model:
+  provider: openai
+  api_key: ${CARROT_API_KEY}
+  model_name: gpt-4
+  base_url: https://api.openai.com/v1
+  temperature: 0.7
+  max_tokens: 4096
+
+storage:
+  db_path: ~/.carrot/data/carrot.db
+  skill_dir: ~/.carrot/skills
+  memory_dir: ~/.carrot/memories
+  session_dir: ~/.carrot/sessions
+
+server:
+  host: 0.0.0.0
+  port: 8080
+  mode: cli
+
+security:
+  allowed_paths:
+    - ~/.carrot
+  blocked_cmds:
+    - "rm -rf /"
+    - ":(){ :|:& };:"
