@@ -44,15 +44,15 @@ export type { Config, ModelConfig, ModelList }
 
 export const configService = {
   getConfig: async () => {
-    const response = await apiService.get<Config>('/api/config')
+    const response = await apiService.get<Config>('/config')
     return response
   },
   updateConfig: async (config: { model: Partial<ModelConfig> }) => {
-    const response = await apiService.put<{ message: string; config: Config }>('/api/config', config)
+    const response = await apiService.put<{ message: string; config: Config }>('/config', config)
     return response
   },
   getModels: async () => {
-    const response = await apiService.get<ModelList[]>('/api/models')
+    const response = await apiService.get<ModelList[]>('/models')
     return response
   },
 }

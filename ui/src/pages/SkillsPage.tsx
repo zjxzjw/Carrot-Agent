@@ -15,6 +15,7 @@ const SkillsPage: React.FC = () => {
   const [selectedType, setSelectedType] = useState('')
   const dispatch = useDispatch<AppDispatch>()
   const { skills, loading, error } = useSelector((state: RootState) => state.skills)
+  const skillsData = skills || []
   const { t } = useTranslation()
 
   useEffect(() => {
@@ -52,9 +53,9 @@ const SkillsPage: React.FC = () => {
     form.resetFields()
   }, [form])
 
-  const filteredSkills = selectedType 
-    ? skills.filter(skill => skill.platforms?.includes(selectedType))
-    : skills
+  const filteredSkills = selectedType
+    ? skillsData.filter(skill => skill.platforms?.includes(selectedType))
+    : skillsData
 
   const columns = [
     {
@@ -90,7 +91,7 @@ const SkillsPage: React.FC = () => {
     },
   ]
 
-  if (loading && skills.length === 0) {
+  if (loading && skillsData.length === 0) {
     return <Loading size="large" />
   }
 

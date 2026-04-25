@@ -12,10 +12,10 @@ export interface DeleteSessionResponse {
 
 export const sessionsService = {
   fetchSessions: () => {
-    return apiService.get<SessionsResponse>('/api/session')
+    return apiService.get<SessionsResponse>('/session')
   },
   deleteSession: (sessionId: string) => {
-    return apiService.delete<DeleteSessionResponse>(`/api/session/${sessionId}`)
+    return apiService.delete<DeleteSessionResponse>(`/session/${sessionId}`)
   },
 }
 

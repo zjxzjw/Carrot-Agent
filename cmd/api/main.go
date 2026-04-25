@@ -23,6 +23,8 @@ import (
 	"carrotagent/carrot-agent/pkg/agent/model"
 	"carrotagent/carrot-agent/pkg/agent/skill"
 	"carrotagent/carrot-agent/pkg/storage"
+
+	"github.com/joho/godotenv"
 )
 
 var (
@@ -53,6 +55,24 @@ type clientRate struct {
 }
 
 var globalRateLimiter *rateLimiter
+
+func init() {
+	cwd, err := os.Getwd()
+	if err == nil {
+		envPath := filepath.Join(cwd, ".env")
+		if err := godotenv.Load(envPath); err != nil {
+			log.Printf("Warning: .env file not found at %s: %v", envPath, err)
+		} else {
+			log.Println(".env file loaded successfully from:", envPath)
+		}
+	}
+	if username := os.Getenv("CARROT_AUTH_USERNAME"); username == "" {
+		log.Println("Warning: CARROT_AUTH_USERNAME is not set")
+	}
+	if password := os.Getenv("CARROT_AUTH_PASSWORD"); password == "" {
+		log.Println("Warning: CARROT_AUTH_PASSWORD is not set")
+	}
+}
 
 func newRateLimiter(maxReqs int, window time.Duration) *rateLimiter {
 	return &rateLimiter{

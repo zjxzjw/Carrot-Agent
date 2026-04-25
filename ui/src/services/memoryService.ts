@@ -16,10 +16,10 @@ export interface AddMemoryRequest {
 export const memoryService = {
   fetchMemories: (type?: string) => {
     const params = type ? { type } : undefined
-    return apiService.get<MemoriesResponse>('/api/memory', params as Record<string, unknown>)
+    return apiService.get<MemoriesResponse>('/memory', params as Record<string, unknown>)
   },
   addMemory: (data: AddMemoryRequest) => {
-    return apiService.post('/api/memory', data as Record<string, unknown>)
+    return apiService.post('/memory', data as Record<string, unknown>)
   },
 }
 

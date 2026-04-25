@@ -15,6 +15,7 @@ const MemoryPage: React.FC = () => {
   const [memoryType, setMemoryType] = useState('')
   const dispatch = useDispatch<AppDispatch>()
   const { memories, loading, error } = useSelector((state: RootState) => state.memory)
+  const memoriesData = memories || []
   const { t } = useTranslation()
 
   useEffect(() => {
@@ -96,7 +97,7 @@ const MemoryPage: React.FC = () => {
     },
   ]
 
-  if (loading && memories.length === 0) {
+  if (loading && memoriesData.length === 0) {
     return <Loading size="large" />
   }
 
@@ -116,7 +117,7 @@ const MemoryPage: React.FC = () => {
         }
       />
 
-      {memories.length === 0 ? (
+      {memoriesData.length === 0 ? (
         <EmptyState
           title={t('memory.empty')}
           description={t('memory.emptyDesc')}
@@ -126,7 +127,7 @@ const MemoryPage: React.FC = () => {
       ) : (
         <Table
           columns={columns}
-          dataSource={memories}
+          dataSource={memoriesData}
           rowKey="id"
           loading={loading}
           pagination={{ pageSize: 10, showSizeChanger: true, showQuickJumper: true }}

@@ -15,10 +15,10 @@ export interface CreateSkillRequest {
 
 export const skillsService = {
   fetchSkills: () => {
-    return apiService.get<SkillsResponse>('/api/skills')
+    return apiService.get<SkillsResponse>('/skills')
   },
   createSkill: (data: CreateSkillRequest) => {
-    return apiService.post('/api/skills', data as Record<string, unknown>)
+    return apiService.post('/skills', data as Record<string, unknown>)
   },
 }
 

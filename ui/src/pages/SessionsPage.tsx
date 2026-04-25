@@ -10,6 +10,7 @@ import { PageHeader, Loading, EmptyState } from '../components'
 const SessionsPage: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>()
   const { sessions, loading, error } = useSelector((state: RootState) => state.sessions)
+  const sessionsData = sessions || []
   const { t } = useTranslation()
 
   useEffect(() => {
@@ -72,7 +73,7 @@ const SessionsPage: React.FC = () => {
     },
   ]
 
-  if (loading && sessions.length === 0) {
+  if (loading && sessionsData.length === 0) {
     return <Loading size="large" />
   }
 
@@ -82,8 +83,8 @@ const SessionsPage: React.FC = () => {
         title={t('sessions.title')}
         showAction={false}
         extra={
-          <Button 
-            icon={<ReloadOutlined />} 
+          <Button
+            icon={<ReloadOutlined />}
             onClick={handleRefresh}
             loading={loading}
           >
@@ -92,7 +93,7 @@ const SessionsPage: React.FC = () => {
         }
       />
 
-      {sessions.length === 0 ? (
+      {sessionsData.length === 0 ? (
         <EmptyState
           title={t('sessions.empty')}
           description={t('sessions.emptyDesc')}
@@ -100,7 +101,7 @@ const SessionsPage: React.FC = () => {
       ) : (
         <Table
           columns={columns}
-          dataSource={sessions}
+          dataSource={sessionsData}
           rowKey="id"
           loading={loading}
           pagination={{ pageSize: 10, showSizeChanger: true, showTotal: (total: number) => `Total: ${total}` }}

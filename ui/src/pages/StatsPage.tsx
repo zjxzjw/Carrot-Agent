@@ -28,7 +28,8 @@ const StatsPage: React.FC = () => {
     dispatch(fetchStats())
   }, [dispatch])
 
-  const totalMemories = memory_stats.snapshot + memory_stats.session + memory_stats.longterm
+  const safeMemoryStats = memory_stats || { snapshot: 0, session: 0, longterm: 0 }
+  const totalMemories = safeMemoryStats.snapshot + safeMemoryStats.session + safeMemoryStats.longterm
 
   const statsCards = [
     {
@@ -58,9 +59,9 @@ const StatsPage: React.FC = () => {
   ]
 
   const memoryCards = [
-    { title: t('stats.snapshot'), value: memory_stats.snapshot, color: '#1890ff' },
-    { title: t('stats.session'), value: memory_stats.session, color: '#52c41a' },
-    { title: t('stats.longterm'), value: memory_stats.longterm, color: '#faad14' },
+    { title: t('stats.snapshot'), value: safeMemoryStats.snapshot, color: '#1890ff' },
+    { title: t('stats.session'), value: safeMemoryStats.session, color: '#52c41a' },
+    { title: t('stats.longterm'), value: safeMemoryStats.longterm, color: '#faad14' },
   ]
 
   if (loading && !tool_call_count) {
