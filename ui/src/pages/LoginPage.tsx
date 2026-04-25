@@ -61,7 +61,7 @@ const LoginPage: React.FC = () => {
           border: 'none',
           background: '#ffffff'
         }}
-        bodyStyle={{ padding: '48px 40px' }}
+        styles={{ body: { padding: '48px 40px' } }}
       >
         {/* Logo and Title */}
         <div style={{ textAlign: 'center', marginBottom: '40px' }}>
@@ -111,7 +111,11 @@ const LoginPage: React.FC = () => {
         
         <Form
           name="login"
-          initialValues={{ remember: true }}
+          initialValues={{ 
+            remember: true,
+            username: 'admin',
+            password: 'admin123'
+          }}
           onFinish={onFinish}
           size="large"
           layout="vertical"

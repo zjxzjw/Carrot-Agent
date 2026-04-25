@@ -5,6 +5,7 @@ import memoryReducer from './memorySlice'
 import sessionsReducer from './sessionsSlice'
 import statsReducer from './statsSlice'
 import authReducer from './authSlice'
+import themeReducer from './themeSlice'
 
 export const store = configureStore({
   reducer: {
@@ -14,6 +15,7 @@ export const store = configureStore({
     sessions: sessionsReducer,
     stats: statsReducer,
     auth: authReducer,
+    theme: themeReducer,
   },
 })  
 

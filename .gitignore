@@ -1,6 +1,7 @@
 # Dependencies
 node_modules/
 vendor/
+example/
 
 # Binaries
 *.exe
@@ -26,6 +27,7 @@ coverage.html
 .vscode/
 *.swp
 *.swo
+
 
 # OS
 .DS_Store

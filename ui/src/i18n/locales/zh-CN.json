@@ -1,6 +1,7 @@
 {
   "menu": {
     "chat": "聊天",
+    "tools": "工具管理",
     "skills": "技能管理",
     "memory": "记忆管理",
     "sessions": "会话管理",
@@ -16,7 +17,27 @@
     "send": "发送",
     "clear": "清空",
     "empty": "开始和 Carrot Agent 对话吧",
-    "thinking": "Agent 正在思考..."
+    "thinking": "Agent 正在思考...",
+    "welcome": "欢迎使用 Carrot Agent",
+    "copySuccess": "已复制到剪贴板",
+    "copy": "复制",
+    "copied": "已复制",
+    "errorTitle": "出错了",
+    "inputHint": "按 Enter 发送，Shift + Enter 换行",
+    "suggestions": {
+      "greeting": "👋 打个招呼",
+      "features": "💡 了解功能",
+      "code": "💻 编写代码"
+    },
+    "suggestionTexts": {
+      "greeting": "你好，请介绍一下你自己",
+      "features": "你能帮我做什么？",
+      "code": "帮我写一段Python代码"
+    },
+    "sender": {
+      "user": "你",
+      "assistant": "Carrot Agent"
+    }
   },
   "skills": {
     "title": "技能管理",
@@ -117,5 +138,22 @@
   },
   "header": {
     "logout": "退出登录"
+  },
+  "tools": {
+    "title": "工具管理",
+    "description": "查看和管理 Carrot Agent 可用的工具",
+    "all_tools": "所有工具",
+    "tools": "工具",
+    "empty": "暂无工具",
+    "error": {
+      "title": "获取工具失败",
+      "fetch": "获取工具列表失败，请稍后重试"
+    },
+    "table": {
+      "name": "工具名称",
+      "description": "工具描述",
+      "toolset": "工具集",
+      "parameters": "参数"
+    }
   }
 }

@@ -1,6 +1,7 @@
 {
   "menu": {
     "chat": "Chat",
+    "tools": "Tools",
     "skills": "Skills",
     "memory": "Memory",
     "sessions": "Sessions",
@@ -16,7 +17,27 @@
     "send": "Send",
     "clear": "Clear",
     "empty": "Start a conversation with Carrot Agent",
-    "thinking": "Agent is thinking..."
+    "thinking": "Agent is thinking...",
+    "welcome": "Welcome to Carrot Agent",
+    "copySuccess": "Copied to clipboard",
+    "copy": "Copy",
+    "copied": "Copied",
+    "errorTitle": "Error",
+    "inputHint": "Press Enter to send, Shift + Enter for new line",
+    "suggestions": {
+      "greeting": "👋 Say hello",
+      "features": "💡 Learn features",
+      "code": "💻 Write code"
+    },
+    "suggestionTexts": {
+      "greeting": "Hello, please introduce yourself",
+      "features": "What can you help me with?",
+      "code": "Help me write a Python code snippet"
+    },
+    "sender": {
+      "user": "You",
+      "assistant": "Carrot Agent"
+    }
   },
   "skills": {
     "title": "Skills Management",
@@ -117,5 +138,22 @@
   },
   "header": {
     "logout": "Logout"
+  },
+  "tools": {
+    "title": "Tools Management",
+    "description": "View and manage tools available to Carrot Agent",
+    "all_tools": "All Tools",
+    "tools": "tools",
+    "empty": "No tools yet",
+    "error": {
+      "title": "Failed to get tools",
+      "fetch": "Failed to fetch tools list, please try again later"
+    },
+    "table": {
+      "name": "Tool Name",
+      "description": "Tool Description",
+      "toolset": "Toolset",
+      "parameters": "Parameters"
+    }
   }
 }

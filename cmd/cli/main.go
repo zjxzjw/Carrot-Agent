@@ -201,14 +201,17 @@ func handleConversationTurn(ctx context.Context, ag *agent.AIAgent, input string
 
 		choice := resp.Choices[0]
 
-		if len(choice.ToolCalls) > 0 {
+		if choice.FinishReason == "tool_calls" && len(choice.Message.ToolCalls) > 0 {
 			fmt.Println("Tool calls detected, processing...")
-			toolCallMaps := make([]map[string]interface{}, 0, len(choice.ToolCalls))
-			for _, tc := range choice.ToolCalls {
+			toolCallMaps := make([]map[string]interface{}, 0, len(choice.Message.ToolCalls))
+			for _, tc := range choice.Message.ToolCalls {
 				toolCallMaps = append(toolCallMaps, map[string]interface{}{
-					"id":      tc.ID,
-					"name":   tc.Function.Name,
-					"arguments": tc.Function.Arguments,
+					"id":   tc.ID,
+					"type": "function",
+					"function": map[string]interface{}{
+						"name":      tc.Function.Name,
+						"arguments": tc.Function.Arguments,
+					},
 				})
 			}
 
@@ -217,19 +220,27 @@ func handleConversationTurn(ctx context.Context, ag *agent.AIAgent, input string
 				return fmt.Errorf("failed to process tool calls: %w", err)
 			}
 
-			var resultMessages []model.Message
 			for j, result := range results {
-				resultContent := fmt.Sprintf("Tool %d result: %s", j+1, result["output"])
-				resultMessages = append(resultMessages, model.Message{
-					Role:    "tool",
-					Content: resultContent,
-				})
-			}
+				toolCallID, _ := result["tool_call_id"].(string)
+				output := fmt.Sprintf("%v", result["output"])
 
-			if len(resultMessages) > 0 {
-				for _, msg := range resultMessages {
-					ag.AddMessage(msg)
+				var toolCallName string
+				for _, tc := range choice.Message.ToolCalls {
+					if tc.ID == toolCallID {
+						toolCallName = tc.Function.Name
+						break
+					}
 				}
+
+				toolMessage := model.Message{
+					Role:       "tool",
+					Content:    output,
+					Name:       toolCallName,
+					ToolCallID: toolCallID,
+					Type:       "function",
+				}
+				ag.AddMessage(toolMessage)
+				fmt.Printf("Tool %d result: %s\n", j+1, output)
 			}
 
 			currentInput = "Continue"

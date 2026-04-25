@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react'
-import { Layout, Menu, ConfigProvider, Select, Spin, Button } from 'antd'
+import { useState, useCallback, useEffect } from 'react'
+import { Layout, Menu, ConfigProvider, Select, Spin, Button, Switch, Tooltip, theme as antTheme } from 'antd'
 import zhCN from 'antd/locale/zh_CN'
 import enUS from 'antd/locale/en_US'
 import {
@@ -10,14 +10,18 @@ import {
   BarChartOutlined,
   SettingOutlined,
   GlobalOutlined,
-  LogoutOutlined
+  LogoutOutlined,
+  MoonOutlined,
+  SunOutlined
 } from '@ant-design/icons'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
-import { useDispatch } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 import { logout } from './store/authSlice'
+import { toggleTheme } from './store/themeSlice'
+import { RootState } from './store'
 import i18n from './i18n'
-import { ChatPage, SkillsPage, MemoryPage, SessionsPage, StatsPage, ConfigPage } from './pages'
+import { ChatPage, SkillsPage, MemoryPage, SessionsPage, StatsPage, ConfigPage, ToolsPage } from './pages'
 import logo from './assets/logo.png'
 
 const { Header, Content, Sider } = Layout
@@ -28,6 +32,21 @@ const App: React.FC = () => {
   const { t, i18n: i18nInstance } = useTranslation()
   const navigate = useNavigate()
   const dispatch = useDispatch()
+  const currentTheme = useSelector((state: RootState) => state.theme.theme)
+
+  useEffect(() => {
+    if (currentTheme === 'dark') {
+      document.body.style.backgroundColor = '#0f172a'
+      document.documentElement.setAttribute('data-theme', 'dark')
+    } else {
+      document.body.style.backgroundColor = '#f5f7fa'
+      document.documentElement.setAttribute('data-theme', 'light')
+    }
+  }, [currentTheme])
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', currentTheme)
+  }, [currentTheme])
 
   const handleLogout = () => {
     dispatch(logout())
@@ -36,7 +55,8 @@ const App: React.FC = () => {
 
   const items = [
     { key: 'chat', label: t('menu.chat'), icon: <MessageOutlined /> },
-    { key: 'skills', label: t('menu.skills'), icon: <ToolOutlined /> },
+    { key: 'tools', label: t('menu.tools'), icon: <ToolOutlined /> },
+    { key: 'skills', label: t('menu.skills'), icon: <DatabaseOutlined /> },
     { key: 'memory', label: t('menu.memory'), icon: <DatabaseOutlined /> },
     { key: 'sessions', label: t('menu.sessions'), icon: <HistoryOutlined /> },
     { key: 'stats', label: t('menu.stats'), icon: <BarChartOutlined /> },
@@ -53,10 +73,16 @@ const App: React.FC = () => {
       .finally(() => setLoading(false))
   }, [i18nInstance])
 
+  const handleThemeToggle = () => {
+    dispatch(toggleTheme())
+  }
+
   const renderContent = () => {
     switch (current) {
       case 'chat':
         return <ChatPage />
+      case 'tools':
+        return <ToolsPage />
       case 'skills':
         return <SkillsPage />
       case 'memory':
@@ -76,15 +102,26 @@ const App: React.FC = () => {
     return i18n.language === 'zh-CN' ? zhCN : enUS
   }
 
+  const isDark = currentTheme === 'dark'
+
   return (
-    <ConfigProvider locale={getAntdLocale()}>
+    <ConfigProvider 
+      locale={getAntdLocale()}
+      theme={{
+        algorithm: isDark ? antTheme.darkAlgorithm : antTheme.defaultAlgorithm,
+        token: {
+          colorPrimary: '#3b82f6',
+          borderRadius: 8,
+        },
+      }}
+    >
       <Layout style={{ minHeight: '100vh' }}>
         <Sider 
-          theme="light" 
+          theme={isDark ? 'dark' : 'light'} 
           width={220} 
           style={{ 
-            borderRight: '1px solid #f0f0f0',
-            boxShadow: '2px 0 8px rgba(0,0,0,0.05)',
+            borderRight: isDark ? '1px solid #1e293b' : '1px solid #e2e8f0',
+            boxShadow: '2px 0 12px rgba(0,0,0,0.08)',
           }}
         >
           <div 
@@ -93,17 +130,18 @@ const App: React.FC = () => {
               display: 'flex', 
               alignItems: 'center', 
               justifyContent: 'center',
-              borderBottom: '1px solid #f0f0f0',
+              borderBottom: isDark ? '1px solid #1e293b' : '1px solid #e2e8f0',
+              background: isDark ? 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)' : 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
             }}
           >
             <img 
               src={logo} 
               alt="Carrot Agent Logo" 
-              style={{ width: 32, height: 32, marginRight: 12 }}
+              style={{ width: 36, height: 36, marginRight: 12, borderRadius: 10 }}
             />
             <div>
-              <div style={{ fontSize: 18, fontWeight: 'bold', color: '#333' }}>Carrot Agent</div>
-              <div style={{ fontSize: 12, color: '#999' }}>{t('app.subtitle')}</div>
+              <div style={{ fontSize: 18, fontWeight: '700', color: isDark ? '#f1f5f9' : '#1e293b' }}>Carrot Agent</div>
+              <div style={{ fontSize: 12, color: isDark ? '#94a3b8' : '#64748b' }}>{t('app.subtitle')}</div>
             </div>
           </div>
           <Menu
@@ -114,38 +152,51 @@ const App: React.FC = () => {
             style={{ height: 'calc(100% - 72px)', borderRight: 0 }}
           />
         </Sider>
-        <Layout>
+        <Layout style={{ background: isDark ? '#0f172a' : '#f5f7fa' }}>
           <Header 
             style={{ 
               padding: '0 24px', 
-              background: '#fff',
-              borderBottom: '1px solid #f0f0f0',
+              background: isDark ? '#1e293b' : '#fff',
+              borderBottom: isDark ? '1px solid #334155' : '1px solid #e2e8f0',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
+              height: 64,
             }}
           >
-            <span style={{ fontSize: 14, color: '#666' }}>
+            <span style={{ fontSize: 15, color: isDark ? '#e2e8f0' : '#475569', fontWeight: 500 }}>
               {t(`menu.${current}`)}
             </span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-              <GlobalOutlined style={{ color: '#666' }} />
-              <Select
-                value={i18n.language}
-                onChange={handleLanguageChange}
-                options={[
-                  { value: 'zh-CN', label: '中文' },
-                  { value: 'en-US', label: 'English' },
-                ]}
-                style={{ width: 120 }}
-                disabled={loading}
-              />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Tooltip title={isDark ? '切换到亮色模式' : '切换到暗色模式'}>
+                  <Switch
+                    checked={isDark}
+                    onChange={handleThemeToggle}
+                    checkedChildren={<MoonOutlined />}
+                    unCheckedChildren={<SunOutlined />}
+                  />
+                </Tooltip>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <GlobalOutlined style={{ color: isDark ? '#94a3b8' : '#64748b' }} />
+                <Select
+                  value={i18n.language}
+                  onChange={handleLanguageChange}
+                  options={[
+                    { value: 'zh-CN', label: '中文' },
+                    { value: 'en-US', label: 'English' },
+                  ]}
+                  style={{ width: 120 }}
+                  disabled={loading}
+                />
+              </div>
               {loading && <Spin size="small" />}
               <Button 
                 type="text" 
                 icon={<LogoutOutlined />} 
                 onClick={handleLogout}
-                style={{ color: '#666' }}
+                style={{ color: isDark ? '#94a3b8' : '#64748b' }}
               >
                 {t('header.logout')}
               </Button>
@@ -155,13 +206,17 @@ const App: React.FC = () => {
             style={{ 
               margin: 24, 
               padding: 24, 
-              background: '#fff', 
+              background: isDark ? '#1e293b' : '#fff', 
               minHeight: 280,
-              borderRadius: 8,
-              boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+              borderRadius: 16,
+              boxShadow: isDark 
+                ? '0 4px 20px rgba(0, 0, 0, 0.3)' 
+                : '0 4px 20px rgba(0, 0, 0, 0.06)',
             }}
           >
-            {renderContent()}
+            <div className="fade-in-up">
+              {renderContent()}
+            </div>
           </Content>
         </Layout>
       </Layout>

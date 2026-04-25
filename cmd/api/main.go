@@ -28,12 +28,12 @@ import (
 )
 
 var (
-	aiAgent *agent.AIAgent
-	store   *storage.Store
-	appConfig *config.Config
-	sessions = make(map[string]*sessionInfo) // 存储会话信息
-	sessionMu sync.RWMutex // 保护sessions map的并发访问
-	sessionTimeout = 24 * time.Hour // 会话超时时间
+	aiAgent        *agent.AIAgent
+	store          *storage.Store
+	appConfig      *config.Config
+	sessions       = make(map[string]*sessionInfo) // 存储会话信息
+	sessionMu      sync.RWMutex                    // 保护sessions map的并发访问
+	sessionTimeout = 24 * time.Hour                // 会话超时时间
 )
 
 type sessionInfo struct {
@@ -43,15 +43,15 @@ type sessionInfo struct {
 }
 
 type rateLimiter struct {
-	mu       sync.RWMutex
-	clients  map[string]*clientRate
-	maxReqs  int
-	window   time.Duration
+	mu      sync.RWMutex
+	clients map[string]*clientRate
+	maxReqs int
+	window  time.Duration
 }
 
 type clientRate struct {
-	count    int
-	resetAt  time.Time
+	count   int
+	resetAt time.Time
 }
 
 var globalRateLimiter *rateLimiter
@@ -182,7 +182,7 @@ func generateSessionID() (string, error) {
 func cleanupExpiredSessions() {
 	sessionMu.Lock()
 	defer sessionMu.Unlock()
-	
+
 	now := time.Now()
 	for sessionID, info := range sessions {
 		if now.After(info.ExpiresAt) {
@@ -213,7 +213,7 @@ func authMiddleware(next http.HandlerFunc) http.HandlerFunc {
 		sessionMu.RLock()
 		info, ok := sessions[sessionID]
 		sessionMu.RUnlock()
-		
+
 		if !ok || time.Now().After(info.ExpiresAt) {
 			http.Error(w, `{"error":"Unauthorized: Invalid or expired session"}`, http.StatusUnauthorized)
 			return
@@ -284,7 +284,7 @@ func initAgent(cfg *config.Config, store *storage.Store) *agent.AIAgent {
 		Name:          cfg.Agent.Name,
 		Version:       cfg.Agent.Version,
 		DataDir:       cfg.Agent.DataDir,
-		ModelProvider:  cfg.Model.Provider,
+		ModelProvider: cfg.Model.Provider,
 		ModelName:     cfg.Model.ModelName,
 		Temperature:   cfg.Model.Temperature,
 		MaxTokens:     cfg.Model.MaxTokens,
@@ -344,19 +344,21 @@ func main() {
 	http.HandleFunc("/health", securityHeadersMiddleware(handleHealth))
 	http.HandleFunc("/api/login", securityHeadersMiddleware(rateLimitMiddleware(handleLogin)))
 	http.HandleFunc("/api/chat", authMiddleware(securityHeadersMiddleware(rateLimitMiddleware(handleChat))))
+	http.HandleFunc("/api/chat/stream", authMiddleware(securityHeadersMiddleware(rateLimitMiddleware(handleChatStream))))
 	http.HandleFunc("/api/skills", authMiddleware(securityHeadersMiddleware(rateLimitMiddleware(handleSkills))))
 	http.HandleFunc("/api/memory", authMiddleware(securityHeadersMiddleware(rateLimitMiddleware(handleMemory))))
 	http.HandleFunc("/api/stats", authMiddleware(securityHeadersMiddleware(rateLimitMiddleware(handleStats))))
 	http.HandleFunc("/api/session/", authMiddleware(securityHeadersMiddleware(rateLimitMiddleware(handleSession))))
 	http.HandleFunc("/api/config", authMiddleware(securityHeadersMiddleware(rateLimitMiddleware(handleConfig))))
 	http.HandleFunc("/api/models", authMiddleware(securityHeadersMiddleware(rateLimitMiddleware(handleModels))))
+	http.HandleFunc("/api/tools", authMiddleware(securityHeadersMiddleware(rateLimitMiddleware(handleTools))))
 
 	server := &http.Server{
-		Addr:         fmt.Sprintf(":%d", cfg.Server.Port),
-		Handler:      nil,
-		ReadTimeout:  15 * time.Second,
-		WriteTimeout: 60 * time.Second,
-		IdleTimeout:  120 * time.Second,
+		Addr:           fmt.Sprintf(":%d", cfg.Server.Port),
+		Handler:        nil,
+		ReadTimeout:    15 * time.Second,
+		WriteTimeout:   60 * time.Second,
+		IdleTimeout:    120 * time.Second,
 		MaxHeaderBytes: 1 << 20, // 1MB
 	}
 
@@ -560,18 +562,20 @@ func handleChat(w http.ResponseWriter, r *http.Request) {
 	if len(resp.Choices) > 0 {
 		choice := resp.Choices[0]
 		log.Printf("Received model response with finish reason: %s", choice.FinishReason)
-		log.Printf("Number of tool calls: %d", len(choice.ToolCalls))
-		
+		// DeepSeek puts tool_calls inside message
+		log.Printf("Number of tool calls: %d", len(choice.Message.ToolCalls))
+
 		// 如果模型决定调用工具
 		if choice.FinishReason == "tool_calls" {
-			if len(choice.ToolCalls) > 0 {
+			if len(choice.Message.ToolCalls) > 0 {
 				log.Printf("Processing tool calls...")
 				// 提取工具调用信息
-				toolCalls := make([]map[string]interface{}, 0, len(choice.ToolCalls))
-				for _, toolCall := range choice.ToolCalls {
+				toolCalls := make([]map[string]interface{}, 0, len(choice.Message.ToolCalls))
+				for _, toolCall := range choice.Message.ToolCalls {
 					log.Printf("Tool call: %s, arguments: %s", toolCall.Function.Name, toolCall.Function.Arguments)
 					toolCallMap := map[string]interface{}{
-						"id": toolCall.ID,
+						"id":   toolCall.ID,
+						"type": "function",
 						"function": map[string]interface{}{
 							"name":      toolCall.Function.Name,
 							"arguments": toolCall.Function.Arguments,
@@ -579,43 +583,60 @@ func handleChat(w http.ResponseWriter, r *http.Request) {
 					}
 					toolCalls = append(toolCalls, toolCallMap)
 				}
-				
+
 				// 执行工具调用
 				log.Printf("Executing tool calls...")
-				toolResults, err := aiAgent.ProcessToolCalls(r.Context(), toolCalls)
-				if err != nil {
-					log.Printf("Error processing tool calls: %v", err)
-					http.Error(w, fmt.Sprintf(`{"error":"Failed to process tool calls: %s"}`, err.Error()), http.StatusInternalServerError)
-					return
+				toolResults := make([]map[string]interface{}, 0, len(toolCalls))
+				for _, tc := range toolCalls {
+					toolName, _ := tc["function"].(map[string]interface{})["name"].(string)
+					argsStr, _ := tc["function"].(map[string]interface{})["arguments"].(string)
+					var args map[string]interface{}
+					if err := json.Unmarshal([]byte(argsStr), &args); err != nil {
+						log.Printf("Error parsing tool arguments: %v", err)
+						http.Error(w, fmt.Sprintf(`{"error":"Failed to parse tool arguments: %s"}`, err.Error()), http.StatusInternalServerError)
+						return
+					}
+					toolResult := aiAgent.GetToolRegistry().Execute(r.Context(), toolName, args)
+					if !toolResult.Success {
+						log.Printf("Tool %s execution failed: %s", toolName, toolResult.Error)
+						http.Error(w, fmt.Sprintf(`{"error":"Failed to execute tool %s: %s"}`, toolName, toolResult.Error), http.StatusInternalServerError)
+						return
+					}
+					toolResults = append(toolResults, map[string]interface{}{
+						"tool_call_id": tc["id"],
+						"output":       toolResult.Output,
+					})
 				}
 				log.Printf("Tool calls executed successfully, results count: %d", len(toolResults))
-				
+
 				// 将工具执行结果作为消息添加到对话中
 				for _, result := range toolResults {
 					toolCallID, _ := result["tool_call_id"].(string)
-					output, _ := result["output"].(string)
+					output := fmt.Sprintf("%v", result["output"])
 					log.Printf("Tool result for ID %s: %s", toolCallID, output)
-					
+
 					// 查找对应的工具调用
 					var toolCallName string
-					for _, tc := range choice.ToolCalls {
+					for _, tc := range choice.Message.ToolCalls {
 						if tc.ID == toolCallID {
 							toolCallName = tc.Function.Name
 							break
 						}
 					}
-					
+
 					// 添加工具执行结果消息
+					// DeepSeek requires 'type' field for tool messages
 					toolMessage := model.Message{
 						Role:       "tool",
 						Content:    output,
 						Name:       toolCallName,
 						ToolCallID: toolCallID,
+						Type:       "function", // Required by DeepSeek for tool messages
 					}
 					aiAgent.AddMessage(toolMessage)
 					log.Printf("Added tool message for %s", toolCallName)
 				}
-				
+
 				// 再次调用模型，获取最终响应
 				log.Printf("Getting final response from model...")
 				finalResp, err := aiAgent.RunConversation(r.Context(), "")
@@ -625,7 +646,7 @@ func handleChat(w http.ResponseWriter, r *http.Request) {
 					return
 				}
 				log.Printf("Final response received")
-				
+
 				// 返回最终响应
 				if len(finalResp.Choices) > 0 {
 					log.Printf("Final response content: %s", finalResp.Choices[0].Message.Content)
@@ -633,18 +654,50 @@ func handleChat(w http.ResponseWriter, r *http.Request) {
 						"message": finalResp.Choices[0].Message.Content,
 						"usage":   finalResp.Usage,
 					}
-					
+
 					w.Header().Set("Content-Type", "application/json")
 					json.NewEncoder(w).Encode(response)
 				} else {
 					http.Error(w, `{"error":"No final response from model"}`, http.StatusInternalServerError)
 				}
+			} else if choice.Message.Content != "" {
+				// 模型返回了 tool_calls 但没有实际工具调用，但有内容
+				// 将内容作为普通响应返回
+				log.Printf("Model returned tool_calls but no actual tool calls, returning content as normal response")
+				response := map[string]interface{}{
+					"message": choice.Message.Content,
+					"usage":   resp.Usage,
+				}
+
+				w.Header().Set("Content-Type", "application/json")
+				json.NewEncoder(w).Encode(response)
 			} else {
-				// 处理边缘情况：模型返回了tool_calls但没有实际工具调用
-				log.Printf("Model returned tool_calls but no actual tool calls, returning error...")
-				
-				// 直接返回一个错误信息，告诉用户模型需要工具调用但没有提供具体的工具调用信息
-				http.Error(w, `{"error":"Model returned tool_calls but no actual tool calls were provided. Please try again with a more specific request."}`, http.StatusInternalServerError)
+				// 处理边缘情况：模型返回了tool_calls但没有实际工具调用，也没有内容
+				// 这可能是模型的异常行为，我们尝试重新请求或者返回友好提示
+				log.Printf("WARNING: Model returned finish_reason=tool_calls but no tool calls and no content")
+				log.Printf("This might be a model compatibility issue. Attempting to get a direct response...")
+
+				// 尝试再次调用模型，但不带工具定义，强制模型直接回复
+				log.Printf("Retrying without tools to get a direct response...")
+				retryResp, retryErr := aiAgent.RunConversation(r.Context(), "")
+				if retryErr != nil {
+					log.Printf("Retry also failed: %v", retryErr)
+					http.Error(w, `{"error":"The model encountered an issue processing your request. Please try rephrasing your question."}`, http.StatusInternalServerError)
+					return
+				}
+
+				if len(retryResp.Choices) > 0 && retryResp.Choices[0].Message.Content != "" {
+					log.Printf("Retry successful, content: %s", retryResp.Choices[0].Message.Content)
+					response := map[string]interface{}{
+						"message": retryResp.Choices[0].Message.Content,
+						"usage":   retryResp.Usage,
+					}
+					w.Header().Set("Content-Type", "application/json")
+					json.NewEncoder(w).Encode(response)
+				} else {
+					log.Printf("Retry also returned empty response")
+					http.Error(w, `{"error":"The model could not process your request. Please try again with a different question."}`, http.StatusInternalServerError)
+				}
 			}
 		} else {
 			// 直接返回模型响应
@@ -653,13 +706,160 @@ func handleChat(w http.ResponseWriter, r *http.Request) {
 				"message": choice.Message.Content,
 				"usage":   resp.Usage,
 			}
-			
+
 			w.Header().Set("Content-Type", "application/json")
 			json.NewEncoder(w).Encode(response)
 		}
 	} else {
 		http.Error(w, `{"error":"No response from model"}`, http.StatusInternalServerError)
 	}
+}
+
+func handleChatStream(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, `{"error":"Method not allowed"}`, http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req struct {
+		Message   string `json:"message"`
+		SessionID string `json:"session_id"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, `{"error":"Invalid request body"}`, http.StatusBadRequest)
+		return
+	}
+
+	if req.Message == "" {
+		http.Error(w, `{"error":"Message is required"}`, http.StatusBadRequest)
+		return
+	}
+
+	if len(req.Message) > 10000 {
+		http.Error(w, `{"error":"Message too long (max 10000 characters)"}`, http.StatusBadRequest)
+		return
+	}
+
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		http.Error(w, `{"error":"Streaming not supported"}`, http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+	w.Header().Set("X-Accel-Buffering", "no")
+
+	aiAgent.AddMessage(model.Message{
+		Role:    "user",
+		Content: req.Message,
+	})
+
+	modelProvider := aiAgent.GetModelProvider()
+	if modelProvider == nil {
+		sendSSEvent(w, flusher, "error", map[string]string{"error": "Model provider not configured"})
+		return
+	}
+
+	agentConfig := aiAgent.GetConfig()
+	toolDefs := aiAgent.GetToolRegistry().ListEnabled()
+
+	tools := make([]model.ToolDefinition, 0, len(toolDefs))
+	for _, def := range toolDefs {
+		properties := make(map[string]model.Property)
+		required := []string{}
+
+		for paramName, paramDef := range def.Parameters {
+			paramMap, ok := paramDef.(map[string]interface{})
+			if !ok {
+				continue
+			}
+			paramType, _ := paramMap["type"].(string)
+			paramDesc, _ := paramMap["description"].(string)
+			properties[paramName] = model.Property{
+				Type:        paramType,
+				Description: paramDesc,
+			}
+			if requiredFlag, ok := paramMap["required"].(bool); ok && requiredFlag {
+				required = append(required, paramName)
+			}
+		}
+
+		tools = append(tools, model.ToolDefinition{
+			Type: "function",
+			Function: model.ToolFunctionDef{
+				Name:        def.Name,
+				Description: def.Description,
+				Parameters: model.ToolParameters{
+					Type:       "object",
+					Properties: properties,
+					Required:   required,
+				},
+			},
+		})
+	}
+
+	chatReq := &model.ChatRequest{
+		Model:       agentConfig.ModelName,
+		Messages:    aiAgent.GetMessages(),
+		Temperature: agentConfig.Temperature,
+		MaxTokens:   agentConfig.MaxTokens,
+		Tools:       tools,
+		Stream:      true,
+	}
+
+	accumulatedContent := ""
+
+	err := modelProvider.ChatStream(r.Context(), chatReq, func(chunk *model.ChatResponse) error {
+		if len(chunk.Choices) > 0 {
+			choice := chunk.Choices[0]
+			accumulatedContent += choice.Message.Content
+
+			event := map[string]interface{}{
+				"content": choice.Message.Content,
+				"done":    chunk.Done,
+			}
+
+			if chunk.Done {
+				event["usage"] = chunk.Usage
+			}
+
+			if err := sendSSEvent(w, flusher, "chunk", event); err != nil {
+				return err
+			}
+
+			if choice.FinishReason == "stop" {
+				return nil
+			}
+		}
+		return nil
+	})
+
+	if err != nil {
+		log.Printf("Stream error: %v", err)
+		sendSSEvent(w, flusher, "error", map[string]string{"error": err.Error()})
+		return
+	}
+
+	aiAgent.AddMessage(model.Message{
+		Role:    "assistant",
+		Content: accumulatedContent,
+	})
+}
+
+func sendSSEvent(w http.ResponseWriter, flusher http.Flusher, event string, data interface{}) error {
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
+	_, err = fmt.Fprintf(w, "data: %s\n\nevent: %s\n\n", jsonData, event)
+	if err != nil {
+		return err
+	}
+	flusher.Flush()
+	return nil
 }
 
 func handleSkills(w http.ResponseWriter, r *http.Request) {
@@ -678,10 +878,10 @@ func handleListSkills(w http.ResponseWriter, r *http.Request) {
 
 	response := struct {
 		Skills []*storage.Skill `json:"skills"`
-		Count int `json:"count"`
+		Count  int              `json:"count"`
 	}{
 		Skills: skills,
-		Count: len(skills),
+		Count:  len(skills),
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -752,10 +952,10 @@ func handleListMemory(w http.ResponseWriter, r *http.Request) {
 
 	response := struct {
 		Memories []*storage.Memory `json:"memories"`
-		Count int `json:"count"`
+		Count    int               `json:"count"`
 	}{
 		Memories: memories,
-		Count: len(memories),
+		Count:    len(memories),
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -923,8 +1123,8 @@ func handleModels(w http.ResponseWriter, r *http.Request) {
 	}
 
 	models := []struct {
-		Provider string `json:"provider"`
-		Models []string `json:"models"`
+		Provider string   `json:"provider"`
+		Models   []string `json:"models"`
 	}{
 		{
 			Provider: "openai",
@@ -950,4 +1150,28 @@ func handleModels(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(models)
+}
+
+func handleTools(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// 获取所有工具
+	toolRegistry := aiAgent.GetToolRegistry()
+	toolInfos := toolRegistry.GetToolInfo()
+	toolsetInfo := toolRegistry.GetToolsetInfo()
+	toolsets := toolRegistry.GetToolsets()
+
+	// 构建响应
+	response := map[string]interface{}{
+		"tools":        toolInfos,
+		"toolsets":     toolsets,
+		"toolset_info": toolsetInfo,
+		"count":        len(toolInfos),
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
 }

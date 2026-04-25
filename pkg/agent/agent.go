@@ -23,9 +23,24 @@ import (
 	"carrotagent/carrot-agent/pkg/storage"
 )
 
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+func buildToolParams(properties map[string]interface{}, required []string) map[string]interface{} {
+	return map[string]interface{}{
+		"type":       "object",
+		"properties": properties,
+		"required":   required,
+	}
+}
+
 var (
-	allowedPaths   = []string{"~/.carrot", "/tmp"}
-	blockListRegex = regexp.MustCompile(`(?i)(proc|sys|etc/passwd|etc/shadow|\.ssh|\.aws|\.git/config)`)
+	allowedPaths    = []string{"~/.carrot", "/tmp"}
+	blockListRegex  = regexp.MustCompile(`(?i)(proc|sys|etc/passwd|etc/shadow|\.ssh|\.aws|\.git/config)`)
 	privateIPRanges = []*net.IPNet{
 		parseCIDR("10.0.0.0/8"),
 		parseCIDR("172.16.0.0/12"),
@@ -103,16 +118,16 @@ type AIAgent struct {
 }
 
 type AgentConfig struct {
-	Name           string
-	Version        string
-	DataDir        string
-	ModelProvider  string
-	ModelName      string
-	Temperature    float64
-	MaxTokens      int
-	EnableSkills   bool
-	EnableMemory   bool
-	SkillNudgeInt  int
+	Name          string
+	Version       string
+	DataDir       string
+	ModelProvider string
+	ModelName     string
+	Temperature   float64
+	MaxTokens     int
+	EnableSkills  bool
+	EnableMemory  bool
+	SkillNudgeInt int
 }
 
 type AgentOption func(*AIAgent)
@@ -139,6 +154,36 @@ func WithToolRegistry(registry *tool.ToolRegistry) AgentOption {
 	return func(a *AIAgent) {
 		a.toolRegistry = registry
 	}
+}
+
+func (a *AIAgent) GetToolRegistry() *tool.ToolRegistry {
+	return a.toolRegistry
+}
+
+func (a *AIAgent) GetModelProvider() model.Provider {
+	return a.modelProvider
+}
+
+func (a *AIAgent) GetConfig() *AgentConfig {
+	return a.config
+}
+
+func (a *AIAgent) GetMessages() []model.Message {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	return a.conversation
+}
+
+func (a *AIAgent) AddMessage(msg model.Message) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	a.conversation = append(a.conversation, msg)
+}
+
+func (a *AIAgent) ClearMessages() {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	a.conversation = make([]model.Message, 0)
 }
 
 func NewAIAgent(cfg *AgentConfig, store *storage.Store, opts ...AgentOption) *AIAgent {
@@ -183,9 +228,12 @@ func (a *AIAgent) Initialize(ctx context.Context) error {
 func (a *AIAgent) registerDefaultTools() {
 	a.toolRegistry.Register("memory_read",
 		"Read from memory storage",
-		map[string]interface{}{
-			"memory_id": map[string]interface{}{"type": "string", "description": "Memory ID to read", "required": true},
-		},
+		buildToolParams(
+			map[string]interface{}{
+				"memory_id": map[string]interface{}{"type": "string", "description": "Memory ID to read"},
+			},
+			[]string{"memory_id"},
+		),
 		func(ctx context.Context, args map[string]interface{}) (interface{}, error) {
 			id, _ := args["memory_id"].(string)
 			mem, err := a.Memory.Get(id)
@@ -200,11 +248,14 @@ func (a *AIAgent) registerDefaultTools() {
 
 	a.toolRegistry.Register("memory_write",
 		"Write to memory storage",
-		map[string]interface{}{
-			"type":     map[string]interface{}{"type": "string", "description": "Memory type (snapshot, session, longterm)", "required": true},
-			"content":  map[string]interface{}{"type": "string", "description": "Content to store", "required": true},
-			"metadata": map[string]interface{}{"type": "string", "description": "Optional metadata as JSON", "required": false},
-		},
+		buildToolParams(
+			map[string]interface{}{
+				"type":     map[string]interface{}{"type": "string", "description": "Memory type (snapshot, session, longterm)"},
+				"content":  map[string]interface{}{"type": "string", "description": "Content to store"},
+				"metadata": map[string]interface{}{"type": "string", "description": "Optional metadata as JSON"},
+			},
+			[]string{"type", "content"},
+		),
 		func(ctx context.Context, args map[string]interface{}) (interface{}, error) {
 			memType, _ := args["type"].(string)
 			content, _ := args["content"].(string)
@@ -221,11 +272,14 @@ func (a *AIAgent) registerDefaultTools() {
 
 	a.toolRegistry.Register("skill_create",
 		"Create a new skill",
-		map[string]interface{}{
-			"name":        map[string]interface{}{"type": "string", "description": "Skill name", "required": true},
-			"description": map[string]interface{}{"type": "string", "description": "Skill description", "required": true},
-			"content":      map[string]interface{}{"type": "string", "description": "Skill content in markdown format", "required": true},
-		},
+		buildToolParams(
+			map[string]interface{}{
+				"name":        map[string]interface{}{"type": "string", "description": "Skill name"},
+				"description": map[string]interface{}{"type": "string", "description": "Skill description"},
+				"content":     map[string]interface{}{"type": "string", "description": "Skill content in markdown format"},
+			},
+			[]string{"name", "description", "content"},
+		),
 		func(ctx context.Context, args map[string]interface{}) (interface{}, error) {
 			name, _ := args["name"].(string)
 			description, _ := args["description"].(string)
@@ -239,10 +293,13 @@ func (a *AIAgent) registerDefaultTools() {
 
 	a.toolRegistry.Register("skill_update",
 		"Update an existing skill",
-		map[string]interface{}{
-			"skill_id": map[string]interface{}{"type": "string", "description": "Skill ID to update", "required": true},
-			"content":   map[string]interface{}{"type": "string", "description": "New skill content", "required": true},
-		},
+		buildToolParams(
+			map[string]interface{}{
+				"skill_id": map[string]interface{}{"type": "string", "description": "Skill ID to update"},
+				"content":  map[string]interface{}{"type": "string", "description": "New skill content"},
+			},
+			[]string{"skill_id", "content"},
+		),
 		func(ctx context.Context, args map[string]interface{}) (interface{}, error) {
 			skillID, _ := args["skill_id"].(string)
 			content, _ := args["content"].(string)
@@ -255,7 +312,10 @@ func (a *AIAgent) registerDefaultTools() {
 
 	a.toolRegistry.Register("skill_list",
 		"List all available skills",
-		map[string]interface{}{},
+		buildToolParams(
+			map[string]interface{}{},
+			[]string{},
+		),
 		func(ctx context.Context, args map[string]interface{}) (interface{}, error) {
 			skills := a.SkillManager.List(100)
 			if len(skills) == 0 {
@@ -272,9 +332,12 @@ func (a *AIAgent) registerDefaultTools() {
 
 	a.toolRegistry.Register("skill_search",
 		"Search skills by keyword",
-		map[string]interface{}{
-			"keyword": map[string]interface{}{"type": "string", "description": "Search keyword", "required": true},
-		},
+		buildToolParams(
+			map[string]interface{}{
+				"keyword": map[string]interface{}{"type": "string", "description": "Search keyword"},
+			},
+			[]string{"keyword"},
+		),
 		func(ctx context.Context, args map[string]interface{}) (interface{}, error) {
 			keyword, _ := args["keyword"].(string)
 			skills, err := a.SkillManager.Search(keyword, 50)
@@ -296,23 +359,29 @@ func (a *AIAgent) registerDefaultTools() {
 
 	a.toolRegistry.Register("system_info",
 		"Get system information",
-		map[string]interface{}{},
+		buildToolParams(
+			map[string]interface{}{},
+			[]string{},
+		),
 		func(ctx context.Context, args map[string]interface{}) (interface{}, error) {
 			info := map[string]interface{}{
-				"os":         runtime.GOOS,
-				"arch":       runtime.GOARCH,
-				"go_version": runtime.Version(),
+				"os":            runtime.GOOS,
+				"arch":          runtime.GOARCH,
+				"go_version":    runtime.Version(),
 				"agent_version": a.version,
-				"time":       time.Now().Format(time.RFC3339),
+				"time":          time.Now().Format(time.RFC3339),
 			}
 			return info, nil
 		})
 
 	a.toolRegistry.Register("file_read",
 		"Read file content",
-		map[string]interface{}{
-			"file_path": map[string]interface{}{"type": "string", "description": "File path to read", "required": true},
-		},
+		buildToolParams(
+			map[string]interface{}{
+				"file_path": map[string]interface{}{"type": "string", "description": "File path to read"},
+			},
+			[]string{"file_path"},
+		),
 		func(ctx context.Context, args map[string]interface{}) (interface{}, error) {
 			filePath, _ := args["file_path"].(string)
 			if !isPathAllowed(filePath) {
@@ -327,10 +396,13 @@ func (a *AIAgent) registerDefaultTools() {
 
 	a.toolRegistry.Register("file_write",
 		"Write content to file",
-		map[string]interface{}{
-			"file_path": map[string]interface{}{"type": "string", "description": "File path to write", "required": true},
-			"content":   map[string]interface{}{"type": "string", "description": "Content to write", "required": true},
-		},
+		buildToolParams(
+			map[string]interface{}{
+				"file_path": map[string]interface{}{"type": "string", "description": "File path to write"},
+				"content":   map[string]interface{}{"type": "string", "description": "Content to write"},
+			},
+			[]string{"file_path", "content"},
+		),
 		func(ctx context.Context, args map[string]interface{}) (interface{}, error) {
 			filePath, _ := args["file_path"].(string)
 			if !isPathAllowed(filePath) {
@@ -345,9 +417,12 @@ func (a *AIAgent) registerDefaultTools() {
 
 	a.toolRegistry.Register("http_get",
 		"Send HTTP GET request",
-		map[string]interface{}{
-			"url": map[string]interface{}{"type": "string", "description": "URL to request", "required": true},
-		},
+		buildToolParams(
+			map[string]interface{}{
+				"url": map[string]interface{}{"type": "string", "description": "URL to request"},
+			},
+			[]string{"url"},
+		),
 		func(ctx context.Context, args map[string]interface{}) (interface{}, error) {
 			url, _ := args["url"].(string)
 			if !isURLAllowed(url) {
@@ -365,15 +440,18 @@ func (a *AIAgent) registerDefaultTools() {
 			}
 
 			return map[string]interface{}{
-				"status": resp.Status,
+				"status":      resp.Status,
 				"status_code": resp.StatusCode,
-				"content": string(body),
+				"content":     string(body),
 			}, nil
 		})
 
 	a.toolRegistry.Register("get_time",
 		"Get current time",
-		map[string]interface{}{},
+		buildToolParams(
+			map[string]interface{}{},
+			[]string{},
+		),
 		func(ctx context.Context, args map[string]interface{}) (interface{}, error) {
 			return map[string]interface{}{
 				"current_time": time.Now().Format(time.RFC3339),
@@ -388,19 +466,36 @@ func (a *AIAgent) RunConversation(ctx context.Context, userInput string) (*model
 
 	logger.Info("Received user input: %s", userInput)
 
-	a.conversation = append(a.conversation, model.Message{
-		Role:    "user",
-		Content: userInput,
-	})
+	if userInput != "" {
+		a.conversation = append(a.conversation, model.Message{
+			Role:    "user",
+			Content: userInput,
+		})
+	}
 
 	systemPrompt := a.buildSystemPrompt()
 	messages := append([]model.Message{{Role: "system", Content: systemPrompt}}, a.conversation...)
+
+	logger.Info("MESSAGES_DEBUG: Built messages array, conversation length=%d", len(a.conversation))
+	for i, m := range a.conversation {
+		logger.Info("MESSAGES_DEBUG: conversation[%d] Role=%q Type=%q ToolCalls=%d", i, m.Role, m.Type, len(m.ToolCalls))
+	}
 
 	req := &model.ChatRequest{
 		Model:       a.config.ModelName,
 		Messages:    messages,
 		Temperature: a.config.Temperature,
 		MaxTokens:   a.config.MaxTokens,
+	}
+
+	// Ensure all messages have proper type field for DeepSeek compatibility
+	for i := range req.Messages {
+		if req.Messages[i].Role == "assistant" && len(req.Messages[i].ToolCalls) > 0 && req.Messages[i].Type == "" {
+			req.Messages[i].Type = "function"
+		}
+		if req.Messages[i].Role == "tool" && req.Messages[i].Type == "" {
+			req.Messages[i].Type = "function"
+		}
 	}
 
 	tools := tool.ConvertToModelTools(a.toolRegistry)
@@ -415,7 +510,7 @@ func (a *AIAgent) RunConversation(ctx context.Context, userInput string) (*model
 				// Always set parameters, even if not present
 				properties := make(map[string]model.Property)
 				required := []string{}
-				
+
 				if params, ok := fn["parameters"].(map[string]interface{}); ok {
 					if props, ok := params["properties"].(map[string]interface{}); ok {
 						for name, prop := range props {
@@ -427,7 +522,7 @@ func (a *AIAgent) RunConversation(ctx context.Context, userInput string) (*model
 							}
 						}
 					}
-					
+
 					if reqList, ok := params["required"].([]interface{}); ok {
 						for _, req := range reqList {
 							if reqStr, ok := req.(string); ok {
@@ -436,7 +531,7 @@ func (a *AIAgent) RunConversation(ctx context.Context, userInput string) (*model
 						}
 					}
 				}
-				
+
 				functionDef.Parameters = model.ToolParameters{
 					Type:       "object",
 					Properties: properties,
@@ -450,6 +545,17 @@ func (a *AIAgent) RunConversation(ctx context.Context, userInput string) (*model
 			}
 		}
 		logger.Debug("Registered %d tools for model", len(tools))
+		logger.Info("Tool names: %v", func() []string {
+			names := make([]string, len(tools))
+			for i, t := range tools {
+				if fn, ok := t["function"].(map[string]interface{}); ok {
+					names[i] = getString(fn, "name")
+				}
+			}
+			return names
+		}())
+	} else {
+		logger.Warn("No tools registered!")
 	}
 
 	if a.modelProvider == nil {
@@ -458,16 +564,46 @@ func (a *AIAgent) RunConversation(ctx context.Context, userInput string) (*model
 	}
 
 	logger.Info("Sending request to model: %s", a.config.ModelName)
+
+	// Debug: log the request messages structure
+	reqJSON, _ := json.Marshal(req)
+	logger.Info("REQUEST_DEBUG: Full Request payload: %s", string(reqJSON))
+
+	// Log individual messages for debugging
+	for i, msg := range req.Messages {
+		msgJSON, _ := json.Marshal(msg)
+		logger.Info("REQUEST_DEBUG: Message[%d] role=%s type=%s: %s", i, msg.Role, msg.Type, string(msgJSON[:min(len(msgJSON), 500)]))
+	}
+
 	resp, err := a.modelProvider.Chat(ctx, req)
 	if err != nil {
 		logger.Error("Failed to get model response: %v", err)
 		return nil, fmt.Errorf("failed to get model response: %w", err)
 	}
 
+	// Debug: log the raw response
+	respJSON, _ := json.Marshal(resp)
+	logger.Debug("Raw model response: %s", string(respJSON))
+
 	if len(resp.Choices) > 0 {
 		choice := resp.Choices[0]
-		a.conversation = append(a.conversation, choice.Message)
+		msg := choice.Message
+		logger.Info("STORAGE_DEBUG: Before storing assistant message - Type=%q, Role=%q, ToolCalls=%d, ReasoningContent=%d", 
+			msg.Type, msg.Role, len(msg.ToolCalls), len(msg.ReasoningContent))
+		if len(msg.ToolCalls) > 0 {
+			msg.Type = "function"
+		}
+		logger.Info("STORAGE_DEBUG: After fix before append - Type=%q", msg.Type)
+		a.conversation = append(a.conversation, msg)
 		logger.Info("Received model response with finish reason: %s", choice.FinishReason)
+		logger.Info("Message content: %s", msg.Content)
+		if msg.ReasoningContent != "" {
+			logger.Info("Reasoning content present: %d chars", len(msg.ReasoningContent))
+		}
+		// DeepSeek puts tool_calls inside message
+		if len(msg.ToolCalls) > 0 {
+			logger.Info("Tool calls present: %d", len(msg.ToolCalls))
+		}
 	} else {
 		logger.Warn("No choices returned from model")
 	}
@@ -645,15 +781,9 @@ func (a *AIAgent) ResetConversation() {
 	a.conversation = make([]model.Message, 0)
 }
 
-func (a *AIAgent) AddMessage(msg model.Message) {
-	a.mu.Lock()
-	defer a.mu.Unlock()
-	a.conversation = append(a.conversation, msg)
-}
-
 func (a *AIAgent) GetStats() map[string]interface{} {
 	return map[string]interface{}{
-		"tool_call_count":   a.toolCallCount,
+		"tool_call_count":  a.toolCallCount,
 		"skill_count":      a.SkillManager.GetSkillCount(),
 		"memory_stats":     a.Memory.GetMemoryStats(),
 		"conversation_len": len(a.conversation),
