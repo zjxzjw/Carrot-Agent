@@ -1,10 +1,11 @@
 import React, { useState } from 'react'
-import { Form, Input, Button, Card, Alert, Typography, Space } from 'antd'
+import { Form, Input, Button, Card, Alert, Typography } from 'antd'
 import { LockOutlined, UserOutlined } from '@ant-design/icons'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { useDispatch } from 'react-redux'
 import { login } from '../store/authSlice'
+import logo from '../assets/logo.png'
 
 const { Title, Text } = Typography
 
@@ -48,19 +49,48 @@ const LoginPage: React.FC = () => {
       display: 'flex', 
       justifyContent: 'center', 
       alignItems: 'center', 
-      minHeight: '100vh', 
-      background: '#f0f2f5'
+      minHeight: '100vh',
+      background: '#f5f5f7',
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
     }}>
       <Card 
         style={{ 
-          width: 400, 
-          padding: '24px',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+          width: 400,
+          borderRadius: '20px',
+          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.08)',
+          border: 'none',
+          background: '#ffffff'
         }}
+        bodyStyle={{ padding: '48px 40px' }}
       >
-        <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-          <Title level={3}>{t('login.title')}</Title>
-          <Text type="secondary">{t('login.subtitle')}</Text>
+        {/* Logo and Title */}
+        <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+          <img 
+            src={logo} 
+            alt="Carrot Agent Logo" 
+            style={{ 
+              width: 72, 
+              height: 72,
+              marginBottom: '20px'
+            }}
+          />
+          <Title level={2} style={{ 
+            margin: 0, 
+            fontSize: '28px', 
+            fontWeight: 600,
+            color: '#1d1d1f',
+            letterSpacing: '-0.5px'
+          }}>
+            {t('login.title')}
+          </Title>
+          <Text style={{ 
+            fontSize: '15px', 
+            marginTop: '8px', 
+            display: 'block',
+            color: '#86868b'
+          }}>
+            {t('login.subtitle')}
+          </Text>
         </div>
         
         {error && (
@@ -69,7 +99,13 @@ const LoginPage: React.FC = () => {
             description={error} 
             type="error" 
             showIcon 
-            style={{ marginBottom: '16px' }}
+            closable
+            style={{ 
+              marginBottom: '24px', 
+              borderRadius: '12px',
+              border: 'none',
+              background: '#ffebee'
+            }}
           />
         )}
         
@@ -77,49 +113,99 @@ const LoginPage: React.FC = () => {
           name="login"
           initialValues={{ remember: true }}
           onFinish={onFinish}
+          size="large"
+          layout="vertical"
         >
           <Form.Item
+            label={<span style={{ fontSize: '13px', fontWeight: 500, color: '#1d1d1f' }}>{t('login.placeholder.username')}</span>}
             name="username"
             rules={[
               { required: true, message: t('login.error.username_required') },
             ]}
+            style={{ marginBottom: '20px' }}
           >
             <Input 
-              prefix={<UserOutlined className="site-form-item-icon" />} 
+              prefix={<UserOutlined style={{ color: '#86868b' }} />} 
               placeholder={t('login.placeholder.username')}
-              size="large"
+              style={{ 
+                borderRadius: '12px',
+                height: '48px',
+                background: '#f5f5f7',
+                border: '1px solid transparent',
+                transition: 'all 0.2s ease'
+              }}
+              onFocus={(e) => {
+                e.target.style.background = '#ffffff'
+                e.target.style.borderColor = '#0071e3'
+              }}
+              onBlur={(e) => {
+                e.target.style.background = '#f5f5f7'
+                e.target.style.borderColor = 'transparent'
+              }}
             />
           </Form.Item>
           
           <Form.Item
+            label={<span style={{ fontSize: '13px', fontWeight: 500, color: '#1d1d1f' }}>{t('login.placeholder.password')}</span>}
             name="password"
             rules={[
               { required: true, message: t('login.error.password_required') },
             ]}
+            style={{ marginBottom: '28px' }}
           >
-            <Input
-              prefix={<LockOutlined className="site-form-item-icon" />}
-              type="password"
+            <Input.Password
+              prefix={<LockOutlined style={{ color: '#86868b' }} />}
               placeholder={t('login.placeholder.password')}
-              size="large"
+              style={{ 
+                borderRadius: '12px',
+                height: '48px',
+                background: '#f5f5f7',
+                border: '1px solid transparent',
+                transition: 'all 0.2s ease'
+              }}
+              onFocus={(e) => {
+                const input = e.target.querySelector('input')
+                if (input) {
+                  input.style.background = '#ffffff'
+                  input.style.borderColor = '#0071e3'
+                }
+              }}
+              onBlur={(e) => {
+                const input = e.target.querySelector('input')
+                if (input) {
+                  input.style.background = '#f5f5f7'
+                  input.style.borderColor = 'transparent'
+                }
+              }}
             />
           </Form.Item>
           
-          <Form.Item>
+          <Form.Item style={{ marginBottom: 0 }}>
             <Button 
               type="primary" 
               htmlType="submit" 
-              style={{ width: '100%' }} 
-              size="large"
+              style={{ 
+                width: '100%',
+                height: '48px',
+                borderRadius: '12px',
+                fontSize: '16px',
+                fontWeight: 500,
+                background: '#0071e3',
+                border: 'none',
+                boxShadow: 'none',
+                transition: 'all 0.2s ease'
+              }}
               loading={loading}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = '#0077ed'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = '#0071e3'
+              }}
             >
               {t('login.button.login')}
             </Button>
           </Form.Item>
-          
-          <Space style={{ display: 'flex', justifyContent: 'center', marginTop: '16px' }}>
-            <Text type="secondary">{t('login.default_credentials')}</Text>
-          </Space>
         </Form>
       </Card>
     </div>

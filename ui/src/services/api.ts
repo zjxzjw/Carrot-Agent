@@ -47,6 +47,13 @@ class ApiService {
         return response
       },
       (error: AxiosError) => {
+        // Handle 401 Unauthorized - redirect to login
+        if (error.response?.status === 401) {
+          // Clear session data
+          localStorage.removeItem('sessionId')
+          // Redirect to login page
+          window.location.href = '/login'
+        }
         return Promise.reject(this.handleError(error))
       }
     )

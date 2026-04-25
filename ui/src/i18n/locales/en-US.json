@@ -9,7 +9,7 @@
   },
   "app": {
     "title": "Carrot Agent",
-    "subtitle": "Intelligent Agent Framework"
+    "subtitle": ""
   },
   "chat": {
     "placeholder": "Type a message, press Enter to send, Shift + Enter to newline...",
@@ -97,7 +97,7 @@
     "required": "is required"
   },
   "login": {
-    "title": "Login",
+    "title": "Carrot Agent Login",
     "subtitle": "Please enter your username and password to login",
     "button": {
       "login": "Login"

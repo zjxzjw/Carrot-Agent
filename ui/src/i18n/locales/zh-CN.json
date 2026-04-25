@@ -9,7 +9,7 @@
   },
   "app": {
     "title": "Carrot Agent",
-    "subtitle": "智能代理框架"
+    "subtitle": "安全的Agent助手"
   },
   "chat": {
     "placeholder": "输入消息，按 Enter 发送，Shift + Enter 换行...",
@@ -97,7 +97,7 @@
     "required": "不能为空"
   },
   "login": {
-    "title": "登录",
+    "title": "Carrot Agent 登录",
     "subtitle": "请输入账号密码登录系统",
     "button": {
       "login": "登录"

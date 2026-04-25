@@ -548,6 +548,7 @@ func handleChat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// 第一次调用模型
 	resp, err := aiAgent.RunConversation(r.Context(), req.Message)
 	if err != nil {
 		log.Printf("Error in chat: %v", err)
@@ -555,14 +556,107 @@ func handleChat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// 检查是否需要执行工具调用
 	if len(resp.Choices) > 0 {
-		response := map[string]interface{}{
-			"message": resp.Choices[0].Message.Content,
-			"usage":   resp.Usage,
+		choice := resp.Choices[0]
+		log.Printf("Received model response with finish reason: %s", choice.FinishReason)
+		log.Printf("Number of tool calls: %d", len(choice.ToolCalls))
+		
+		// 如果模型决定调用工具
+		if choice.FinishReason == "tool_calls" {
+			if len(choice.ToolCalls) > 0 {
+				log.Printf("Processing tool calls...")
+				// 提取工具调用信息
+				toolCalls := make([]map[string]interface{}, 0, len(choice.ToolCalls))
+				for _, toolCall := range choice.ToolCalls {
+					log.Printf("Tool call: %s, arguments: %s", toolCall.Function.Name, toolCall.Function.Arguments)
+					toolCallMap := map[string]interface{}{
+						"id": toolCall.ID,
+						"function": map[string]interface{}{
+							"name":      toolCall.Function.Name,
+							"arguments": toolCall.Function.Arguments,
+						},
+					}
+					toolCalls = append(toolCalls, toolCallMap)
+				}
+				
+				// 执行工具调用
+				log.Printf("Executing tool calls...")
+				toolResults, err := aiAgent.ProcessToolCalls(r.Context(), toolCalls)
+				if err != nil {
+					log.Printf("Error processing tool calls: %v", err)
+					http.Error(w, fmt.Sprintf(`{"error":"Failed to process tool calls: %s"}`, err.Error()), http.StatusInternalServerError)
+					return
+				}
+				log.Printf("Tool calls executed successfully, results count: %d", len(toolResults))
+				
+				// 将工具执行结果作为消息添加到对话中
+				for _, result := range toolResults {
+					toolCallID, _ := result["tool_call_id"].(string)
+					output, _ := result["output"].(string)
+					log.Printf("Tool result for ID %s: %s", toolCallID, output)
+					
+					// 查找对应的工具调用
+					var toolCallName string
+					for _, tc := range choice.ToolCalls {
+						if tc.ID == toolCallID {
+							toolCallName = tc.Function.Name
+							break
+						}
+					}
+					
+					// 添加工具执行结果消息
+					toolMessage := model.Message{
+						Role:       "tool",
+						Content:    output,
+						Name:       toolCallName,
+						ToolCallID: toolCallID,
+					}
+					aiAgent.AddMessage(toolMessage)
+					log.Printf("Added tool message for %s", toolCallName)
+				}
+				
+				// 再次调用模型，获取最终响应
+				log.Printf("Getting final response from model...")
+				finalResp, err := aiAgent.RunConversation(r.Context(), "")
+				if err != nil {
+					log.Printf("Error getting final response: %v", err)
+					http.Error(w, fmt.Sprintf(`{"error":"Failed to get final response: %s"}`, err.Error()), http.StatusInternalServerError)
+					return
+				}
+				log.Printf("Final response received")
+				
+				// 返回最终响应
+				if len(finalResp.Choices) > 0 {
+					log.Printf("Final response content: %s", finalResp.Choices[0].Message.Content)
+					response := map[string]interface{}{
+						"message": finalResp.Choices[0].Message.Content,
+						"usage":   finalResp.Usage,
+					}
+					
+					w.Header().Set("Content-Type", "application/json")
+					json.NewEncoder(w).Encode(response)
+				} else {
+					http.Error(w, `{"error":"No final response from model"}`, http.StatusInternalServerError)
+				}
+			} else {
+				// 处理边缘情况：模型返回了tool_calls但没有实际工具调用
+				log.Printf("Model returned tool_calls but no actual tool calls, returning error...")
+				
+				// 直接返回一个错误信息，告诉用户模型需要工具调用但没有提供具体的工具调用信息
+				http.Error(w, `{"error":"Model returned tool_calls but no actual tool calls were provided. Please try again with a more specific request."}`, http.StatusInternalServerError)
+			}
+		} else {
+			// 直接返回模型响应
+			log.Printf("Direct response: %s", choice.Message.Content)
+			response := map[string]interface{}{
+				"message": choice.Message.Content,
+				"usage":   resp.Usage,
+			}
+			
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(response)
 		}
-
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(response)
 	} else {
 		http.Error(w, `{"error":"No response from model"}`, http.StatusInternalServerError)
 	}
