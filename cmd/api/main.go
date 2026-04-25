@@ -586,55 +586,51 @@ func handleChat(w http.ResponseWriter, r *http.Request) {
 
 				// 执行工具调用
 				log.Printf("Executing tool calls...")
-				toolResults := make([]map[string]interface{}, 0, len(toolCalls))
 				for _, tc := range toolCalls {
+					toolCallID, _ := tc["id"].(string)
 					toolName, _ := tc["function"].(map[string]interface{})["name"].(string)
 					argsStr, _ := tc["function"].(map[string]interface{})["arguments"].(string)
 					var args map[string]interface{}
 					if err := json.Unmarshal([]byte(argsStr), &args); err != nil {
 						log.Printf("Error parsing tool arguments: %v", err)
-						http.Error(w, fmt.Sprintf(`{"error":"Failed to parse tool arguments: %s"}`, err.Error()), http.StatusInternalServerError)
-						return
-					}
-					toolResult := aiAgent.GetToolRegistry().Execute(r.Context(), toolName, args)
-					if !toolResult.Success {
-						log.Printf("Tool %s execution failed: %s", toolName, toolResult.Error)
-						http.Error(w, fmt.Sprintf(`{"error":"Failed to execute tool %s: %s"}`, toolName, toolResult.Error), http.StatusInternalServerError)
-						return
-					}
-					toolResults = append(toolResults, map[string]interface{}{
-						"tool_call_id": tc["id"],
-						"output":       toolResult.Output,
-					})
-				}
-				log.Printf("Tool calls executed successfully, results count: %d", len(toolResults))
-
-				// 将工具执行结果作为消息添加到对话中
-				for _, result := range toolResults {
-					toolCallID, _ := result["tool_call_id"].(string)
-					output := fmt.Sprintf("%v", result["output"])
-					log.Printf("Tool result for ID %s: %s", toolCallID, output)
-
-					// 查找对应的工具调用
-					var toolCallName string
-					for _, tc := range choice.Message.ToolCalls {
-						if tc.ID == toolCallID {
-							toolCallName = tc.Function.Name
-							break
+						// Add error as tool response instead of returning
+						toolMessage := model.Message{
+							Role:       "tool",
+							Content:    fmt.Sprintf("Error parsing arguments: %v", err),
+							Name:       toolName,
+							ToolCallID: toolCallID,
+							Type:       "function",
 						}
+						aiAgent.AddMessage(toolMessage)
+						continue
 					}
-
-					// 添加工具执行结果消息
-					// DeepSeek requires 'type' field for tool messages
+					
+					toolResult := aiAgent.GetToolRegistry().Execute(r.Context(), toolName, args)
+					
+					// Always add tool response message, even if execution failed
+					output := ""
+					if toolResult.Success {
+						if outputBytes, err := json.Marshal(toolResult.Output); err == nil {
+							output = string(outputBytes)
+						} else {
+							output = fmt.Sprintf("%v", toolResult.Output)
+						}
+						log.Printf("Tool %s executed successfully", toolName)
+					} else {
+						output = toolResult.Error
+						log.Printf("Tool %s execution failed: %s", toolName, toolResult.Error)
+					}
+					
+					// Add tool response to conversation history
 					toolMessage := model.Message{
 						Role:       "tool",
 						Content:    output,
-						Name:       toolCallName,
+						Name:       toolName,
 						ToolCallID: toolCallID,
-						Type:       "function", // Required by DeepSeek for tool messages
+						Type:       "function",
 					}
 					aiAgent.AddMessage(toolMessage)
-					log.Printf("Added tool message for %s", toolCallName)
+					log.Printf("Added tool message for %s (success=%v)", toolName, toolResult.Success)
 				}
 
 				// 再次调用模型，获取最终响应

@@ -215,32 +215,15 @@ func handleConversationTurn(ctx context.Context, ag *agent.AIAgent, input string
 				})
 			}
 
-			results, err := ag.ProcessToolCalls(ctx, toolCallMaps)
+			toolMessages, err := ag.ProcessToolCalls(ctx, toolCallMaps)
 			if err != nil {
 				return fmt.Errorf("failed to process tool calls: %w", err)
 			}
 
-			for j, result := range results {
-				toolCallID, _ := result["tool_call_id"].(string)
-				output := fmt.Sprintf("%v", result["output"])
-
-				var toolCallName string
-				for _, tc := range choice.Message.ToolCalls {
-					if tc.ID == toolCallID {
-						toolCallName = tc.Function.Name
-						break
-					}
-				}
-
-				toolMessage := model.Message{
-					Role:       "tool",
-					Content:    output,
-					Name:       toolCallName,
-					ToolCallID: toolCallID,
-					Type:       "function",
-				}
-				ag.AddMessage(toolMessage)
-				fmt.Printf("Tool %d result: %s\n", j+1, output)
+			// Add all tool response messages to conversation
+			for i, toolMsg := range toolMessages {
+				ag.AddMessage(toolMsg)
+				fmt.Printf("Tool %d result: %s\n", i+1, toolMsg.Content)
 			}
 
 			currentInput = "Continue"

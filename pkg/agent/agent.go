@@ -661,18 +661,22 @@ func (a *AIAgent) buildSystemPrompt() string {
 	return prompt.String()
 }
 
-func (a *AIAgent) ProcessToolCalls(ctx context.Context, toolCalls []map[string]interface{}) ([]map[string]interface{}, error) {
-	results := make([]map[string]interface{}, 0, len(toolCalls))
+func (a *AIAgent) ProcessToolCalls(ctx context.Context, toolCalls []map[string]interface{}) ([]model.Message, error) {
+	messages := make([]model.Message, 0, len(toolCalls))
 
 	for _, tc := range toolCalls {
 		toolCallID, _ := tc["id"].(string)
 		parsed, err := tool.ParseToolCall(tc)
 		if err != nil {
-			results = append(results, map[string]interface{}{
-				"tool_call_id": toolCallID,
-				"output":       fmt.Sprintf("Error parsing tool call: %v", err),
-			})
 			logger.Error("Failed to parse tool call: %v", err)
+			// Add error message even if parsing failed
+			toolMsg := model.Message{
+				Role:       "tool",
+				Content:    fmt.Sprintf("Error parsing tool call: %v", err),
+				ToolCallID: toolCallID,
+				Type:       "function",
+			}
+			messages = append(messages, toolMsg)
 			continue
 		}
 
@@ -694,10 +698,15 @@ func (a *AIAgent) ProcessToolCalls(ctx context.Context, toolCalls []map[string]i
 			logger.Error("Tool %s execution failed: %s", parsed.Name, result.Error)
 		}
 
-		results = append(results, map[string]interface{}{
-			"tool_call_id": toolCallID,
-			"output":       output,
-		})
+		// Always add tool response message, even if execution failed
+		toolMsg := model.Message{
+			Role:       "tool",
+			Content:    output,
+			Name:       parsed.Name,
+			ToolCallID: toolCallID,
+			Type:       "function",
+		}
+		messages = append(messages, toolMsg)
 
 		a.toolCallCount++
 
@@ -706,7 +715,7 @@ func (a *AIAgent) ProcessToolCalls(ctx context.Context, toolCalls []map[string]i
 		}
 	}
 
-	return results, nil
+	return messages, nil
 }
 
 func (a *AIAgent) triggerSkillNudge(ctx context.Context) {
